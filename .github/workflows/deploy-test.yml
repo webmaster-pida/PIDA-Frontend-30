@@ -1,0 +1,54 @@
+name: Deploy Frontend to Test
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write 
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # CONSTRUCCIÓN APP PRINCIPAL
+      - name: Instalar dependencias (Principal)
+        working-directory: ./portal-principal
+        run: npm install
+
+      - name: Construir proyecto (Principal)
+        working-directory: ./portal-principal
+        run: npm run build
+
+      # CONSTRUCCIÓN APP ADMIN
+      - name: Instalar dependencias (Admin)
+        working-directory: ./portal-admin
+        run: npm install
+
+      - name: Construir proyecto (Admin)
+        working-directory: ./portal-admin
+        run: npm run build
+
+      # DESPLIEGUE SEGURO (WIF)
+      - name: Autenticación Segura en Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/736009271165/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'sa-github-deployer@pida-ai-test.iam.gserviceaccount.com'
+
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Desplegar ambos sitios en Firebase Hosting
+        run: firebase deploy --only hosting --project pida-ai-test
