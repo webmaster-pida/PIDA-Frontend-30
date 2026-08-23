@@ -51,4 +51,4 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Desplegar ambos sitios en Firebase Hosting
-        run: firebase deploy --only hosting --project pida-ai-test
+        run: firebase deploy --only hosting --project pida-ai-test --non-interactive --debug
