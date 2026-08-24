@@ -8,11 +8,9 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    
     permissions:
       contents: read
-      id-token: write 
-
+      id-token: write
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -30,6 +28,8 @@ jobs:
       - name: Construir proyecto (Principal)
         working-directory: ./portal-principal
         run: npm run build
+        env:
+          VITE_API_CHAT: ${{ secrets.VITE_API_CHAT }}
 
       # CONSTRUCCIÓN APP ADMIN
       - name: Instalar dependencias (Admin)
@@ -39,6 +39,8 @@ jobs:
       - name: Construir proyecto (Admin)
         working-directory: ./portal-admin
         run: npm run build
+        env:
+          VITE_API_CHAT: ${{ secrets.VITE_API_CHAT }}
 
       # DESPLIEGUE SEGURO (WIF)
       - name: Autenticación Segura en Google Cloud
