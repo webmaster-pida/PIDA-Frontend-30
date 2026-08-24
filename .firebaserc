@@ -1,18 +1,17 @@
 {
   "projects": {
-    "default": "pida-ai-v20"
+    "default": "pida-ai-test"
   },
   "targets": {
-    "pida-ai-v20": {
+    "pida-ai-test": {
       "hosting": {
         "main": [
-          "pida-ai-v20"
+          "pida-ai-test"
         ],
         "admin": [
-          "admin-pida-ai-v20"
+          "pida-ai-test-admin"
         ]
       }
     }
-  },
-  "etags": {}
+  }
 }

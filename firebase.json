@@ -2,7 +2,7 @@
   "hosting": [
     {
       "target": "main",
-      "public": "dist",
+      "public": "portal-principal/dist",
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -28,7 +28,7 @@
     },
     {
       "target": "admin",
-      "public": "admin-dist",
+      "public": "portal-admin/dist",
       "ignore": [
         "firebase.json",
         "**/.*",
