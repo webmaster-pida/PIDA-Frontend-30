@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "pida-ai-test"
+    "default": "pida-ai-test",
+    "prod": "pida-ai-prod"
   },
   "targets": {
     "pida-ai-test": {
@@ -10,6 +11,16 @@
         ],
         "admin": [
           "pida-ai-test-admin"
+        ]
+      }
+    },
+    "pida-ai-prod": {
+      "hosting": {
+        "main": [
+          "pida-ai-prod"
+        ],
+        "admin": [
+          "pida-ai-prod-admin"
         ]
       }
     }
