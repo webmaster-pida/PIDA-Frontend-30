@@ -27,9 +27,7 @@ jobs:
 
       - name: Construir proyecto (Principal)
         working-directory: ./portal-principal
-        run: npm run build
-        env:
-          VITE_API_CHAT: ${{ secrets.VITE_API_CHAT }}
+        run: npm run build -- --mode preview
 
       # CONSTRUCCIÓN APP ADMIN
       - name: Instalar dependencias (Admin)
@@ -38,9 +36,7 @@ jobs:
 
       - name: Construir proyecto (Admin)
         working-directory: ./portal-admin
-        run: npm run build
-        env:
-          VITE_API_CHAT: ${{ secrets.VITE_API_CHAT }}
+        run: npm run build -- --mode preview
 
       # DESPLIEGUE SEGURO (WIF)
       - name: Autenticación Segura en Google Cloud
