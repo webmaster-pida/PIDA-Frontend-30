@@ -27,7 +27,9 @@ jobs:
 
       - name: Construir proyecto (Principal)
         working-directory: ./portal-principal
-        run: npm run build -- --mode preview
+        run: npm run build
+        env:
+          VITE_API_CHAT: "https://api-test.pida-ai.com"
 
       # CONSTRUCCIÓN APP ADMIN
       - name: Instalar dependencias (Admin)
@@ -36,7 +38,9 @@ jobs:
 
       - name: Construir proyecto (Admin)
         working-directory: ./portal-admin
-        run: npm run build -- --mode preview
+        run: npm run build
+        env:
+          VITE_API_CHAT: "https://api-test.pida-ai.com"
 
       # DESPLIEGUE SEGURO (WIF)
       - name: Autenticación Segura en Google Cloud
