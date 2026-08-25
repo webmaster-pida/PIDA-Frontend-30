@@ -228,21 +228,22 @@ export default function Biblioteca() {
       const q = query(chunksRef, where('metadata.title', '==', bookToDelete.title));
       const chunkSnapshots = await getDocs(q);
 
-      const batch = writeBatch(db);
-      let count = 0;
+      const docsArray = chunkSnapshots.docs;
+      const batchSize = 500;
       
-      chunkSnapshots.forEach((chunkDoc) => {
-        batch.delete(chunkDoc.ref);
-        count++;
-      });
-
-      if (count > 0) {
+      // Procesamos las eliminaciones en lotes seguros de 500 para evitar exceder el límite de Firestore
+      for (let i = 0; i < docsArray.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = docsArray.slice(i, i + batchSize);
+        chunk.forEach((chunkDoc) => {
+          batch.delete(chunkDoc.ref);
+        });
         await batch.commit();
       }
 
       await deleteDoc(doc(db, 'library_registry', bookToDelete.id));
 
-      setStatus({ type: 'success', message: `Se eliminó el libro y sus ${count} vectores correctamente.` });
+      setStatus({ type: 'success', message: `Se eliminó el libro y sus ${docsArray.length} vectores correctamente.` });
       setOpenDialog(false);
       setBookToDelete(null);
       
@@ -280,19 +281,30 @@ export default function Biblioteca() {
         }
       });
 
-      const batch = writeBatch(db);
       const registryRef = collection(db, 'library_registry');
-      
+      const titles = Object.keys(catalog);
+      const batchSize = 500;
       let booksFound = 0;
-      Object.keys(catalog).forEach(title => {
-        const safeId = title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 150); // Mantenemos el límite seguro de 150
-        const docRef = doc(registryRef, safeId);
-        batch.set(docRef, catalog[title]);
-        booksFound++;
-      });
+
+      // Dividimos la creación del catálogo en lotes de 500 operaciones
+      for (let i = 0; i < titles.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = titles.slice(i, i + batchSize);
+        
+        chunk.forEach(title => {
+          let safeId = title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 150);
+          if (!safeId || safeId.trim() === "") {
+            safeId = `book_${Math.random().toString(36).substr(2, 9)}`;
+          }
+          const docRef = doc(registryRef, safeId);
+          batch.set(docRef, catalog[title]);
+          booksFound++;
+        });
+        
+        await batch.commit();
+      }
 
       if (booksFound > 0) {
-        await batch.commit();
         setStatus({ type: 'success', message: `¡Sincronización exitosa! Se catalogaron ${booksFound} libros.` });
         fetchBooks(); 
       } else {
