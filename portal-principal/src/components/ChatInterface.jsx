@@ -153,7 +153,17 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
   const pollResearchStatus = async (job_id) => {
     try {
-      const res = await fetch(`${API_CHAT}/api/research/${job_id}`);
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_CHAT}/api/research/${job_id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        console.warn(`Error polling research status: ${res.status}`);
+        setTimeout(() => pollResearchStatus(job_id), 10000);
+        return;
+      }
+
       const data = await res.json();
 
       if (data.status === 'COMPLETADO') {
