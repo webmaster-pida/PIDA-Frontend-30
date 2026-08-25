@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; 
 import { Exporter, getTimestampedName } from '../utils/exporter';
 
-import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography } from '@mui/material';
+import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel } from '@mui/material';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
 
@@ -149,6 +149,42 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [isTyping, setIsTyping] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
+  const [isResearchMode, setIsResearchMode] = useState(false);
+
+  const pollResearchStatus = async (job_id) => {
+    try {
+      const res = await fetch(`${API_CHAT}/api/research/${job_id}`);
+      const data = await res.json();
+
+      if (data.status === 'COMPLETADO') {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            if (newMessages[i].role === 'model' && newMessages[i].content.includes('Iniciando Investigación Profunda')) {
+              newMessages[i] = { ...newMessages[i], content: data.result };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      } else if (data.status === 'ERROR') {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            if (newMessages[i].role === 'model' && newMessages[i].content.includes('Iniciando Investigación Profunda')) {
+              newMessages[i] = { ...newMessages[i], content: `❌ **Error en la investigación:** ${data.error || 'Ocurrió un problema.'}` };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
+        setTimeout(() => pollResearchStatus(job_id), 10000);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (!isTyping && questionQueue.length > 0) {
@@ -320,106 +356,125 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         }
       }
 
-      const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: textToSend })
-      });
+      if (!isResearchMode) {
+        const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: textToSend })
+        });
 
-      if (!res.ok) {
-        if (res.status === 403 || res.status === 402 || res.status === 429) {
-             throw new Error("Has alcanzado tu límite de consultas o tu suscripción no está activa.");
-        }
-        throw new Error(`Error del servidor (${res.status})`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let fullText = "";
-      let streamBuffer = ""; // Búfer para no romper JSONs cortados por la red
-
-      // --- INICIO DE LÓGICA DE COLA DE ESCRITURA ---
-      const textQueue = { current: "" };
-      let isTypingEffectActive = false;
-
-      const typeWriterEffect = async () => {
-        isTypingEffectActive = true;
-        let lastRenderTime = Date.now(); // Control para no saturar a React (CPU)
-        
-        while (textQueue.current.length > 0) {
-          const qLen = textQueue.current.length;
-          
-          // ACELERADOR INTELIGENTE
-          let chunkSize = 1;
-          let delay = 15;
-          
-          if (qLen > 150) { 
-            chunkSize = 4; delay = 10; // Red rápida: Aceleramos tipeo
-          } else if (qLen > 50) { 
-            chunkSize = 2; delay = 12; // Velocidad normal
-          } else if (qLen < 15) { 
-            chunkSize = 1; delay = 35; // Red lenta: Frenamos para no hacer pausas bruscas
+        if (!res.ok) {
+          if (res.status === 403 || res.status === 402 || res.status === 429) {
+               throw new Error("Has alcanzado tu límite de consultas o tu suscripción no está activa.");
           }
-          
-          const chunk = textQueue.current.substring(0, chunkSize);
-          textQueue.current = textQueue.current.substring(chunkSize);
-          fullText += chunk;
-
-          // SALVATAJE DE CPU: Actualizamos Markdown solo cada 40ms
-          const now = Date.now();
-          if (now - lastRenderTime > 40 || textQueue.current.length === 0) {
-            setMessages(prev => {
-              const lastMsg = prev[prev.length - 1];
-              if (lastMsg && lastMsg.role === 'model') {
-                  return [...prev.slice(0, -1), { ...lastMsg, content: fullText }];
-              } else {
-                  return [...prev, { role: 'model', content: fullText }];
-              }
-            });
-            lastRenderTime = now;
-          }
-
-          // Micro-retraso visual
-          await new Promise(resolve => setTimeout(resolve, delay));
+          throw new Error(`Error del servidor (${res.status})`);
         }
-        isTypingEffectActive = false;
-      };
-      // --- FIN DE LÓGICA DE COLA ---
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        streamBuffer += decoder.decode(value, { stream: true });
-        const lines = streamBuffer.split('\n\n');
-        streamBuffer = lines.pop(); // Guarda el último pedazo incompleto para el siguiente ciclo
-        
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            try {
-              const data = JSON.parse(line.substring(6));
-              
-              if (data.event === 'status' && data.message) {
-                setStatusQueue(prev => [...prev, data.message]);
-              } 
-              else if (data.text) {
-                // Guardamos en la cola en lugar de frenar la red
-                textQueue.current += data.text;
-                
-                // Si el escritor está dormido, lo despertamos
-                if (!isTypingEffectActive) {
-                  typeWriterEffect();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let fullText = "";
+        let streamBuffer = ""; // Búfer para no romper JSONs cortados por la red
+
+        // --- INICIO DE LÓGICA DE COLA DE ESCRITURA ---
+        const textQueue = { current: "" };
+        let isTypingEffectActive = false;
+
+        const typeWriterEffect = async () => {
+          isTypingEffectActive = true;
+          let lastRenderTime = Date.now(); // Control para no saturar a React (CPU)
+          
+          while (textQueue.current.length > 0) {
+            const qLen = textQueue.current.length;
+            
+            // ACELERADOR INTELIGENTE
+            let chunkSize = 1;
+            let delay = 15;
+            
+            if (qLen > 150) { 
+              chunkSize = 4; delay = 10; // Red rápida: Aceleramos tipeo
+            } else if (qLen > 50) { 
+              chunkSize = 2; delay = 12; // Velocidad normal
+            } else if (qLen < 15) { 
+              chunkSize = 1; delay = 35; // Red lenta: Frenamos para no hacer pausas bruscas
+            }
+            
+            const chunk = textQueue.current.substring(0, chunkSize);
+            textQueue.current = textQueue.current.substring(chunkSize);
+            fullText += chunk;
+
+            // SALVATAJE DE CPU: Actualizamos Markdown solo cada 40ms
+            const now = Date.now();
+            if (now - lastRenderTime > 40 || textQueue.current.length === 0) {
+              setMessages(prev => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg && lastMsg.role === 'model') {
+                    return [...prev.slice(0, -1), { ...lastMsg, content: fullText }];
+                } else {
+                    return [...prev, { role: 'model', content: fullText }];
                 }
+              });
+              lastRenderTime = now;
+            }
+
+            // Micro-retraso visual
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          isTypingEffectActive = false;
+        };
+        // --- FIN DE LÓGICA DE COLA ---
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          streamBuffer += decoder.decode(value, { stream: true });
+          const lines = streamBuffer.split('\n\n');
+          streamBuffer = lines.pop(); // Guarda el último pedazo incompleto para el siguiente ciclo
+          
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                
+                if (data.event === 'status' && data.message) {
+                  setStatusQueue(prev => [...prev, data.message]);
+                } 
+                else if (data.text) {
+                  // Guardamos en la cola en lugar de frenar la red
+                  textQueue.current += data.text;
+                  
+                  // Si el escritor está dormido, lo despertamos
+                  if (!isTypingEffectActive) {
+                    typeWriterEffect();
+                  }
+                }
+              } catch (e) {
+                // Ignorar errores parciales de JSON de forma segura
               }
-            } catch (e) {
-              // Ignorar errores parciales de JSON de forma segura
             }
           }
         }
-      }
 
-      while (isTypingEffectActive || textQueue.current.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        while (isTypingEffectActive || textQueue.current.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } else {
+        setMessages(prev => [...prev, { role: 'model', content: '🔍 Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí.' }]);
+        
+        const res = await fetch(`${API_CHAT}/api/research`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: textToSend, user_email: user.email })
+        });
+        
+        if (!res.ok) {
+           throw new Error(`Error del servidor (${res.status})`);
+        }
+        
+        const data = await res.json();
+        const job_id = data.job_id;
+        setIsTyping(false);
+        pollResearchStatus(job_id);
       }
 
     } catch (error) {
@@ -681,12 +736,25 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           </Box>
         )}
 
+        <Box sx={{ mb: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isResearchMode}
+                onChange={(e) => setIsResearchMode(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={isResearchMode ? '🔬 Investigación Profunda' : '⚡ Chat Rápido'}
+          />
+        </Box>
+
         <TextField 
           multiline
           minRows={2}
           maxRows={5}
           fullWidth
-          placeholder="Consulta a PIDA..."
+          placeholder={isResearchMode ? "Ingresa tu tema para investigación profunda..." : "Consulta a PIDA..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) handleSend(e); }}
@@ -714,7 +782,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             disabled={isTyping}
             sx={{ width: 220, py: 1.2, borderRadius: 2, fontWeight: 600, bgcolor: 'var(--pida-primary)', '&:hover': { bgcolor: 'var(--pida-accent)' } }}
           >
-            Enviar
+            {isResearchMode ? 'Investigar' : 'Enviar'}
           </Button>
         </Box>
       </form>
