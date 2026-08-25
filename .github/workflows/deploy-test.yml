@@ -5,6 +5,17 @@ on:
     branches:
       - develop
 
+# 👇 VARIABLES GLOBALES: Se escriben una vez, aplican para ambos portales
+env:
+  VITE_API_CHAT: "https://api-test.pida-ai.com"
+  VITE_FIREBASE_API_KEY: "AIzaSyBaBTRUyPJv1H3L_WkLDUh4m3AJZsR64Ng"
+  VITE_FIREBASE_AUTH_DOMAIN: "pida-ai-test.firebaseapp.com"
+  VITE_FIREBASE_PROJECT_ID: "pida-ai-test"
+  VITE_FIREBASE_STORAGE_BUCKET: "pida-ai-test.firebasestorage.app"
+  VITE_FIREBASE_MESSAGING_SENDER_ID: "736009271165"
+  VITE_FIREBASE_APP_ID: "1:736009271165:web:a25424ba7924c3b1adbe14"
+  VITE_FIREBASE_MEASUREMENT_ID: ""
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -27,9 +38,8 @@ jobs:
 
       - name: Construir proyecto (Principal)
         working-directory: ./portal-principal
-        run: npm run build
-        env:
-          VITE_API_CHAT: "https://api-test.pida-ai.com"
+        run: npm run build 
+        # (Ya no necesita el bloque env aquí, lo lee de arriba)
 
       # CONSTRUCCIÓN APP ADMIN
       - name: Instalar dependencias (Admin)
@@ -39,8 +49,7 @@ jobs:
       - name: Construir proyecto (Admin)
         working-directory: ./portal-admin
         run: npm run build
-        env:
-          VITE_API_CHAT: "https://api-test.pida-ai.com"
+        # (Ya no necesita el bloque env aquí, lo lee de arriba)
 
       # DESPLIEGUE SEGURO (WIF)
       - name: Autenticación Segura en Google Cloud
