@@ -181,8 +181,8 @@ export default function Dashboard({ user, onRequireSubscription }) {
   const [preHistory, setPreHistory] = useState([]);
   
   const [anchorEl, setAnchorEl] = useState(null);
-  const [resetSignals, setResetSignals] = useState({ chat: 0, ana: 0, pre: 0 });
-  const [loadData, setLoadData] = useState({ chat: null, ana: null, pre: null });
+  const [resetSignals, setResetSignals] = useState({ investigador: 0, deepresearch: 0, ana: 0, pre: 0 });
+  const [loadData, setLoadData] = useState({ investigador: null, deepresearch: null, ana: null, pre: null });
 
   // === ESTADOS PARA EL SISTEMA DE SOPORTE TÉCNICO ===
   const [isSupportOpen, setIsSupportOpen] = useState(false);
@@ -382,12 +382,17 @@ export default function Dashboard({ user, onRequireSubscription }) {
             startIcon={<AddIcon />} 
             size="small" 
             onClick={() => { 
-              setResetSignals(prev => ({ ...prev, [currentView === 'investigador' ? 'chat' : currentView === 'analizador' ? 'ana' : 'pre']: prev[currentView === 'investigador' ? 'chat' : currentView === 'analizador' ? 'ana' : 'pre'] + 1 })); 
-              setLoadData({ chat: null, ana: null, pre: null }); 
+              const type = (currentView === 'investigador' || currentView === 'deepresearch') ? currentView : currentView === 'analizador' ? 'ana' : 'pre';
+              setResetSignals(prev => ({ ...prev, [type]: prev[type] + 1 })); 
+              if (currentView === 'investigador' || currentView === 'deepresearch') {
+                setLoadData(p => ({ ...p, [currentView]: null }));
+              } else {
+                setLoadData({ investigador: null, deepresearch: null, ana: null, pre: null }); 
+              }
             }} 
             sx={{ ...headerBtnSx, display: currentView === 'cuenta' ? 'none' : 'inline-flex' }}
           >
-            {isMobile ? 'Nuevo' : (currentView === 'investigador' ? 'Nuevo Chat' : currentView === 'analizador' ? 'Nuevo Análisis' : 'Nuevo Caso')}
+            {isMobile ? 'Nuevo' : (currentView === 'investigador' ? 'Nuevo Chat' : currentView === 'deepresearch' ? 'Nueva Inv.' : currentView === 'analizador' ? 'Nuevo Análisis' : 'Nuevo Caso')}
           </Button>
           
           {currentView !== 'cuenta' && (
@@ -413,15 +418,15 @@ export default function Dashboard({ user, onRequireSubscription }) {
                   Registros Recientes
                 </Typography>
                 <Divider />
-                {((currentView === 'investigador' ? chatHistory : currentView === 'analizador' ? anaHistory : preHistory).length === 0) && ( 
+                {((currentView === 'investigador' || currentView === 'deepresearch' ? chatHistory : currentView === 'analizador' ? anaHistory : preHistory).length === 0) && ( 
                   <MenuItem disabled sx={{ justifyContent: 'center', py: 3 }}>No hay historial aún</MenuItem> 
                 )}
-                {(currentView === 'investigador' ? chatHistory : currentView === 'analizador' ? anaHistory : preHistory).map((item) => (
+                {(currentView === 'investigador' || currentView === 'deepresearch' ? chatHistory : currentView === 'analizador' ? anaHistory : preHistory).map((item) => (
                   <MenuItem 
                     key={item.id} 
                     sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, py: 1.5 }} 
                     onClick={() => { 
-                      if (currentView === 'investigador') setLoadData(p => ({...p, chat: item.id})); 
+                      if (currentView === 'investigador' || currentView === 'deepresearch') setLoadData(p => ({...p, [currentView]: item.id})); 
                       else if (currentView === 'analizador') setLoadData(p => ({...p, ana: item.id})); 
                       else setLoadData(p => ({...p, pre: item})); 
                       handleMenuClose(); 
@@ -430,7 +435,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
                     <Typography variant="body2" noWrap sx={{ flexGrow: 1, maxWidth: '240px' }}>
                       {item.title || "Sin título"}
                     </Typography>
-                    <IconButton size="small" color="error" onClick={(e) => deleteItem(currentView === 'investigador' ? 'chat' : currentView === 'analizador' ? 'ana' : 'pre', item.id, e)}> 
+                    <IconButton size="small" color="error" onClick={(e) => deleteItem(currentView === 'investigador' || currentView === 'deepresearch' ? 'chat' : currentView === 'analizador' ? 'ana' : 'pre', item.id, e)}> 
                       <DeleteIcon fontSize="small" /> 
                     </IconButton>
                   </MenuItem>
@@ -472,7 +477,8 @@ export default function Dashboard({ user, onRequireSubscription }) {
           </Box>
         </Box>
         <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
-          {currentView === 'investigador' && <ChatInterface user={user} resetSignal={resetSignals.chat} loadChatId={loadData.chat} refreshHistory={fetchHistories} />}
+          {currentView === 'investigador' && <ChatInterface key="chat-investigador" user={user} resetSignal={resetSignals.investigador} loadChatId={loadData.investigador} refreshHistory={fetchHistories} isResearchModeProp={false} />}
+          {currentView === 'deepresearch' && <ChatInterface key="chat-deepresearch" user={user} resetSignal={resetSignals.deepresearch} loadChatId={loadData.deepresearch} refreshHistory={fetchHistories} isResearchModeProp={true} />}
           {currentView === 'analizador' && <AnalyzerInterface user={user} resetSignal={resetSignals.ana} loadAnaId={loadData.ana} />}
           {currentView === 'precalificador' && <PrequalifierInterface user={user} resetSignal={resetSignals.pre} loadPreData={loadData.pre} />}
           {currentView === 'cuenta' && <AccountInterface user={user} isVip={isVip} />}

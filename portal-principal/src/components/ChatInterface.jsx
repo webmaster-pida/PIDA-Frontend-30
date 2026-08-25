@@ -143,13 +143,17 @@ const PreviewLink = ({ href, children, node, title, ...props }) => {
   );
 }
 
-export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory }) {
+export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchModeProp = false }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
-  const [isResearchMode, setIsResearchMode] = useState(false);
+  const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
+
+  useEffect(() => {
+    setIsResearchMode(isResearchModeProp);
+  }, [isResearchModeProp]);
 
   const pollResearchStatus = async (job_id) => {
     try {
@@ -745,19 +749,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             </ButtonGroup>
           </Box>
         )}
-
-        <Box sx={{ mb: 1 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isResearchMode}
-                onChange={(e) => setIsResearchMode(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={isResearchMode ? '🔬 Investigación Profunda' : '⚡ Chat Rápido'}
-          />
-        </Box>
 
         <TextField 
           multiline
