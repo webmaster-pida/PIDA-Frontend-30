@@ -151,6 +151,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
   const activeTypingRef = useRef(null);
+  const lastStatusRef = useRef("");
 
   useEffect(() => {
     setIsResearchMode(isResearchModeProp);
@@ -196,7 +197,8 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       md += `\n`;
     }
     
-    md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*`;
+    md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*\n\n`;
+    md += `⏳ *PIDA está investigando y redactando el informe en segundo plano...*`;
     return md;
   };
 
@@ -210,7 +212,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     const typeStatusChunk = () => {
       if (index < targetText.length) {
-        const chunkSize = Math.min(15, targetText.length - index);
+        const chunkSize = Math.min(2, targetText.length - index);
         currentText += targetText.substring(index, index + chunkSize);
         index += chunkSize;
 
@@ -239,7 +241,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       }
     };
 
-    activeTypingRef.current = setInterval(typeStatusChunk, 15);
+    activeTypingRef.current = setInterval(typeStatusChunk, 25);
   };
 
   const pollResearchStatus = async (job_id) => {
@@ -262,6 +264,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           clearInterval(activeTypingRef.current);
           activeTypingRef.current = null;
         }
+        lastStatusRef.current = "";
 
         const fullText = data.result;
         let typedText = "";
@@ -296,6 +299,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           clearInterval(activeTypingRef.current);
           activeTypingRef.current = null;
         }
+        lastStatusRef.current = "";
 
         setMessages(prev => {
           const newMessages = [...prev];
@@ -309,7 +313,10 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         });
       } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
         const progressContent = formatResearchProgress(data);
-        streamStatusMessage(progressContent);
+        if (lastStatusRef.current !== progressContent) {
+          lastStatusRef.current = progressContent;
+          streamStatusMessage(progressContent);
+        }
         setTimeout(() => pollResearchStatus(job_id), 5000);
       }
     } catch (error) {
@@ -371,9 +378,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const markdownComponents = {
     a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
     table: ({ node, ...props }) => (
-      <TableContainer component={Paper} sx={{ my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-        <Table size="small" {...props} />
-      </TableContainer>
+      <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
+        <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+          <Table size="small" sx={{ minWidth: 600 }} {...props} />
+        </TableContainer>
+      </div>
     ),
     thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: '#f1f5f9' }} {...props} />,
     tbody: ({ node, ...props }) => <TableBody {...props} />,
@@ -384,7 +393,8 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           fontWeight: 'bold', 
           color: 'var(--pida-primary)', 
           borderBottom: '2px solid #cbd5e1',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'normal',
+          lineHeight: 1.3
         }} 
         {...props} 
       />
@@ -393,7 +403,9 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       <TableCell 
         sx={{ 
           borderColor: '#e2e8f0',
-          verticalAlign: 'top'
+          verticalAlign: 'top',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word'
         }} 
         {...props} 
       />
