@@ -418,9 +418,9 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const markdownComponents = {
     a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
     table: ({ node, ...props }) => (
-      <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-        <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <Table size="small" sx={{ minWidth: 600 }} {...props} />
+      <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+        <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'hidden' }}>
+          <Table size="small" sx={{ width: '100%' }} {...props} />
         </TableContainer>
       </div>
     ),
