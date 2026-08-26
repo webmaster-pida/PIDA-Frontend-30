@@ -155,6 +155,42 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     setIsResearchMode(isResearchModeProp);
   }, [isResearchModeProp]);
 
+  // Función de utilidad para estructurar el progreso de investigación profunda en Markdown
+  const formatResearchProgress = (data) => {
+    let md = `🔍 **Investigación Profunda en curso...**\n\n`;
+    
+    if (data.status_message) {
+      md += `*Estado:* **${data.status_message}**\n\n`;
+    }
+    
+    if (data.steps && data.steps.length > 0) {
+      md += `**Fases y progreso:**\n`;
+      data.steps.forEach(step => {
+        md += `- 🟢 ${step}\n`;
+      });
+      md += `\n`;
+    }
+    
+    if (data.documents_consulted && data.documents_consulted.length > 0) {
+      md += `📂 **Documentos de biblioteca analizados (RAG):**\n`;
+      data.documents_consulted.forEach(doc => {
+        md += `- *${doc}*\n`;
+      });
+      md += `\n`;
+    }
+    
+    if (data.websites_consulted && data.websites_consulted.length > 0) {
+      md += `🌐 **Sitios web e informes consultados:**\n`;
+      data.websites_consulted.forEach(site => {
+        md += `- ${site}\n`;
+      });
+      md += `\n`;
+    }
+    
+    md += `⏳ *Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*`;
+    return md;
+  };
+
   const pollResearchStatus = async (job_id) => {
     try {
       const token = await user.getIdToken();
@@ -164,7 +200,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
       if (!res.ok) {
         console.warn(`Error polling research status: ${res.status}`);
-        setTimeout(() => pollResearchStatus(job_id), 10000);
+        setTimeout(() => pollResearchStatus(job_id), 5000);
         return;
       }
 
@@ -185,7 +221,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             setMessages(prev => {
               const newMessages = [...prev];
               for (let i = newMessages.length - 1; i >= 0; i--) {
-                if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || i === newMessages.length - 1)) {
+                if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso') || i === newMessages.length - 1)) {
                   newMessages[i] = { ...newMessages[i], content: typedText };
                   break;
                 }
@@ -203,7 +239,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         setMessages(prev => {
           const newMessages = [...prev];
           for (let i = newMessages.length - 1; i >= 0; i--) {
-            if (newMessages[i].role === 'model' && newMessages[i].content.includes('Iniciando Investigación Profunda')) {
+            if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso'))) {
               newMessages[i] = { ...newMessages[i], content: `❌ **Error en la investigación:** ${data.error || 'Ocurrió un problema.'}` };
               break;
             }
@@ -211,7 +247,18 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           return newMessages;
         });
       } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
-        setTimeout(() => pollResearchStatus(job_id), 10000);
+        const progressContent = formatResearchProgress(data);
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso'))) {
+              newMessages[i] = { ...newMessages[i], content: progressContent };
+              break;
+            }
+          }
+          return newMessages;
+        });
+        setTimeout(() => pollResearchStatus(job_id), 5000);
       }
     } catch (error) {
       console.error(error);
