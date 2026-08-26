@@ -153,6 +153,16 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const activeTypingRef = useRef(null);
   const lastStatusRef = useRef("");
 
+  const formatMarkdown = (text) => {
+    if (!text) return "";
+    let clean = text;
+    clean = clean.replace(/([^\n])\s*\n*(#{1,6}\s+)/g, '$1\n\n$2');
+    clean = clean.replace(/^\s*\*\*\s*$/gm, '');
+    clean = clean.replace(/([^\n])\n(\|.*\|)\n/g, '$1\n\n$2\n');
+    clean = clean.replace(/(\|.*\|)\n([^\n|])/g, '$1\n\n$2');
+    return clean;
+  };
+
   useEffect(() => {
     setIsResearchMode(isResearchModeProp);
   }, [isResearchModeProp]);
@@ -698,7 +708,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
-      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>{msg.content}</ReactMarkdown>;
+      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>;
     }
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
@@ -749,22 +759,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     displayContent = displayContent.replace(/["']br["']/g, '<br />');
 
-    if (displayContent.includes('## Fuentes y Jurisprudencia')) {
-      const splitPoint = '## Fuentes y Jurisprudencia';
-      const parts = displayContent.split(splitPoint);
-      let fuentesText = parts[1];
-      
-      fuentesText = fuentesText.replace(/\|?\s*:?-{2,}:?\s*\|?/g, '');
-      fuentesText = fuentesText.replace(/\|/g, ' • ');
-      
-      displayContent = parts[0] + splitPoint + fuentesText;
-    }
-
     return (
       <>
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
-            {displayContent}
+            {formatMarkdown(displayContent)}
           </ReactMarkdown>
         </div>
         
