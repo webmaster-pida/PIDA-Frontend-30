@@ -150,14 +150,23 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
+  const activeTypingRef = useRef(null);
 
   useEffect(() => {
     setIsResearchMode(isResearchModeProp);
   }, [isResearchModeProp]);
 
+  useEffect(() => {
+    return () => {
+      if (activeTypingRef.current) {
+        clearInterval(activeTypingRef.current);
+      }
+    };
+  }, []);
+
   // Función de utilidad para estructurar el progreso de investigación profunda en Markdown
   const formatResearchProgress = (data) => {
-    let md = `🔍 **Investigación Profunda en curso...**\n\n`;
+    let md = `**Investigación Profunda en curso...**\n\n`;
     
     if (data.status_message) {
       md += `*Estado:* **${data.status_message}**\n\n`;
@@ -166,13 +175,13 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     if (data.steps && data.steps.length > 0) {
       md += `**Fases y progreso:**\n`;
       data.steps.forEach(step => {
-        md += `- 🟢 ${step}\n`;
+        md += `- ${step}\n`;
       });
       md += `\n`;
     }
     
     if (data.documents_consulted && data.documents_consulted.length > 0) {
-      md += `📂 **Documentos de biblioteca analizados (RAG):**\n`;
+      md += `**Documentos de biblioteca analizados (RAG):**\n`;
       data.documents_consulted.forEach(doc => {
         md += `- *${doc}*\n`;
       });
@@ -180,15 +189,57 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     }
     
     if (data.websites_consulted && data.websites_consulted.length > 0) {
-      md += `🌐 **Sitios web e informes consultados:**\n`;
+      md += `**Sitios web e informes consultados:**\n`;
       data.websites_consulted.forEach(site => {
         md += `- ${site}\n`;
       });
       md += `\n`;
     }
     
-    md += `⏳ *Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*`;
+    md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*`;
     return md;
+  };
+
+  const streamStatusMessage = (targetText) => {
+    if (activeTypingRef.current) {
+      clearInterval(activeTypingRef.current);
+    }
+
+    let currentText = "";
+    let index = 0;
+
+    const typeStatusChunk = () => {
+      if (index < targetText.length) {
+        const chunkSize = Math.min(15, targetText.length - index);
+        currentText += targetText.substring(index, index + chunkSize);
+        index += chunkSize;
+
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            const content = newMessages[i].content;
+            if (
+              newMessages[i].role === 'model' && (
+                content.includes('Iniciando Investigación') ||
+                content.includes('Investigación Profunda en curso') ||
+                i === newMessages.length - 1
+              )
+            ) {
+              newMessages[i] = { ...newMessages[i], content: currentText };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      } else {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+      }
+    };
+
+    activeTypingRef.current = setInterval(typeStatusChunk, 15);
   };
 
   const pollResearchStatus = async (job_id) => {
@@ -207,6 +258,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       const data = await res.json();
 
       if (data.status === 'COMPLETADO') {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+
         const fullText = data.result;
         let typedText = "";
         let index = 0;
@@ -236,6 +292,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         
         typeNextChunk();
       } else if (data.status === 'ERROR') {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+
         setMessages(prev => {
           const newMessages = [...prev];
           for (let i = newMessages.length - 1; i >= 0; i--) {
@@ -248,16 +309,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         });
       } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
         const progressContent = formatResearchProgress(data);
-        setMessages(prev => {
-          const newMessages = [...prev];
-          for (let i = newMessages.length - 1; i >= 0; i--) {
-            if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso'))) {
-              newMessages[i] = { ...newMessages[i], content: progressContent };
-              break;
-            }
-          }
-          return newMessages;
-        });
+        streamStatusMessage(progressContent);
         setTimeout(() => pollResearchStatus(job_id), 5000);
       }
     } catch (error) {
@@ -538,7 +590,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           await new Promise(resolve => setTimeout(resolve, 50));
         }
       } else {
-        setMessages(prev => [...prev, { role: 'model', content: '🔍 Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí.' }]);
+        setMessages(prev => [...prev, { role: 'model', content: 'Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí.' }]);
         
         const res = await fetch(`${API_CHAT}/api/research`, {
           method: 'POST',
