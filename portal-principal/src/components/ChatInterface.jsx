@@ -155,11 +155,41 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
   const formatMarkdown = (text) => {
     if (!text) return "";
-    let clean = text;
+    
+    const lines = text.split('\n');
+    const formattedLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const currentLine = lines[i];
+      const trimmedCurrent = currentLine.trim();
+      const isCurrentTable = trimmedCurrent.startsWith('|') && trimmedCurrent.endsWith('|');
+      
+      if (isCurrentTable) {
+        if (formattedLines.length > 0) {
+          const prevLine = formattedLines[formattedLines.length - 1];
+          const trimmedPrev = prevLine.trim();
+          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+          if (trimmedPrev !== "" && !isPrevTable) {
+            formattedLines.push(""); // Inserta espacio seguro antes de iniciar la tabla
+          }
+        }
+      } else {
+        if (formattedLines.length > 0 && trimmedCurrent !== "") {
+          const prevLine = formattedLines[formattedLines.length - 1];
+          const trimmedPrev = prevLine.trim();
+          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+          if (isPrevTable) {
+            formattedLines.push(""); // Inserta espacio seguro al finalizar la tabla
+          }
+        }
+      }
+      
+      formattedLines.push(currentLine);
+    }
+    
+    let clean = formattedLines.join('\n');
     clean = clean.replace(/([^\n])\s*\n*(#{1,6}\s+)/g, '$1\n\n$2');
     clean = clean.replace(/^\s*\*\*\s*$/gm, '');
-    clean = clean.replace(/([^\n])\n(\|.*\|)\n/g, '$1\n\n$2\n');
-    clean = clean.replace(/(\|.*\|)\n([^\n|])/g, '$1\n\n$2');
     return clean;
   };
 
