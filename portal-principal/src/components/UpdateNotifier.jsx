@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 export default function UpdateNotifier() {
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     // Si estamos programando en local (localhost), no queremos que salte esto.
@@ -56,56 +57,146 @@ export default function UpdateNotifier() {
     };
   }, [hasUpdate]);
 
-  // Si no hay actualización, no renderizamos nada
-  if (!hasUpdate) return null;
+  // Si no hay actualización o el usuario lo cerró, no renderizamos nada
+  if (!hasUpdate || dismissed) return null;
 
   return (
     <div style={{
       position: 'fixed',
-      bottom: '30px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      backgroundColor: 'var(--pida-primary, #1D3557)', 
-      color: 'white',
-      padding: '12px 24px',
-      borderRadius: '30px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(15, 23, 42, 0.85)',
+      backdropFilter: 'blur(5px)',
+      zIndex: 999999999,
       display: 'flex',
+      justifyContent: 'center',
       alignItems: 'center',
-      gap: '15px',
-      zIndex: 999999,
-      animation: 'slideUp 0.5s ease-out'
+      animation: 'fadeIn 0.3s ease'
     }}>
       <style>
         {`
-          @keyframes slideUp {
-            from { transform: translate(-50%, 100px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideUpModal {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
           }
         `}
       </style>
-      <span style={{ fontSize: '0.95rem', fontWeight: '500', whiteSpace: 'nowrap' }}>
-        ✨ Nueva actualización disponible
-      </span>
-      <button 
-        onClick={() => window.location.reload(true)}
-        style={{
-          backgroundColor: 'var(--pida-accent, #0284C7)',
-          color: 'white',
-          border: 'none',
-          padding: '8px 18px',
-          borderRadius: '20px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
+      <div style={{
+        background: '#ffffff',
+        width: '90%',
+        maxWidth: '480px',
+        borderRadius: '12px',
+        padding: '35px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        position: 'relative',
+        textAlign: 'center',
+        border: '1px solid var(--pida-border, #E5E7EB)',
+        animation: 'slideUpModal 0.4s ease-out'
+      }}>
+        <button 
+          onClick={() => setDismissed(true)}
+          style={{
+            position: 'absolute',
+            top: '15px',
+            right: '15px',
+            background: '#f1f5f9',
+            border: 'none',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            fontSize: '18px',
+            color: '#64748b',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+          title="Cerrar y continuar trabajando"
+        >
+          ✕
+        </button>
+        
+        <div style={{
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: 'rgba(0, 195, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '0 auto 20px',
+          color: 'var(--pida-accent, #003399)',
+          fontSize: '28px'
+        }}>
+          ✨
+        </div>
+
+        <h2 style={{
+          color: 'var(--pida-primary, #101852)',
+          fontSize: '1.4rem',
+          fontWeight: '800',
+          marginBottom: '15px'
+        }}>
+          ¡Nueva versión disponible!
+        </h2>
+        
+        <p style={{
+          color: 'var(--pida-text-main, #555555)',
+          fontSize: '0.95rem',
+          lineHeight: '1.6',
+          marginBottom: '15px',
+          textAlign: 'left'
+        }}>
+          Hemos lanzado una nueva actualización con mejoras y correcciones. 
+          Puedes actualizar ahora mismo o el sistema se actualizará automáticamente 
+          la próxima vez que <strong>refresques</strong> o <strong>reinicies tu navegador</strong>.
+        </p>
+
+        <p style={{
+          color: 'var(--pida-text-muted, #6B7280)',
           fontSize: '0.85rem',
-          transition: 'background 0.2s',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseOver={(e) => e.target.style.backgroundColor = '#0369a1'}
-        onMouseOut={(e) => e.target.style.backgroundColor = 'var(--pida-accent, #0284C7)'}
-      >
-        Actualizar ahora
-      </button>
+          lineHeight: '1.5',
+          marginBottom: '25px',
+          textAlign: 'left',
+          background: '#f8fafc',
+          padding: '12px',
+          borderRadius: '8px',
+          borderLeft: '4px solid var(--pida-accent, #003399)'
+        }}>
+          <strong>💡 Sugerencia:</strong> Si estás trabajando en algo importante, puedes cerrar este mensaje 
+          haciendo clic en la "X" y refrescar la página más tarde para no perder tu progreso actual.
+        </p>
+
+        <button 
+          onClick={() => window.location.reload(true)}
+          style={{
+            backgroundColor: 'var(--pida-primary, #101852)',
+            color: 'white',
+            border: 'none',
+            width: '100%',
+            padding: '14px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '700',
+            fontSize: '1rem',
+            transition: 'background 0.2s, transform 0.2s',
+            boxShadow: '0 4px 12px rgba(16, 24, 82, 0.2)'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--pida-accent, #003399)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'var(--pida-primary, #101852)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+        >
+          Actualizar ahora
+        </button>
+      </div>
     </div>
   );
 }

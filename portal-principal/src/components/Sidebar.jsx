@@ -26,7 +26,8 @@ import {
   Gavel as GavelIcon, 
   Logout as LogoutIcon, 
   AccountCircle as AccountIcon,
-  MoreHoriz as MoreIcon 
+  MoreHoriz as MoreIcon,
+  ManageSearch as ManageSearchIcon
 } from '@mui/icons-material';
 import { auth } from '../config/firebase';
 
@@ -52,6 +53,7 @@ export default function Sidebar({ currentView, setCurrentView, user }) {
 
   const navItems = [
     { id: 'investigador', label: 'Experto', icon: <SearchIcon />, fullLabel: 'Experto en DDHH' },
+    { id: 'deepresearch', label: 'Investigación', icon: <ManageSearchIcon />, fullLabel: 'Investigación Profunda' },
     { id: 'analizador', label: 'Analizador', icon: <DescriptionIcon />, fullLabel: 'Analizador Docs' },
     { id: 'precalificador', label: 'Precalificar', icon: <GavelIcon />, fullLabel: 'Evaluador Legal' },
   ];

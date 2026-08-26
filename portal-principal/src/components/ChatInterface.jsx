@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; 
 import { Exporter, getTimestampedName } from '../utils/exporter';
 
-import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography } from '@mui/material';
+import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel } from '@mui/material';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
 
@@ -143,12 +143,226 @@ const PreviewLink = ({ href, children, node, title, ...props }) => {
   );
 }
 
-export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory }) {
+export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchModeProp = false }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
+  const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
+  const activeTypingRef = useRef(null);
+  const lastStatusRef = useRef("");
+
+  const formatMarkdown = (text) => {
+    if (!text) return "";
+    
+    const lines = text.split('\n');
+    const formattedLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const currentLine = lines[i];
+      const trimmedCurrent = currentLine.trim();
+      const isCurrentTable = trimmedCurrent.startsWith('|') && trimmedCurrent.endsWith('|');
+      
+      if (isCurrentTable) {
+        if (formattedLines.length > 0) {
+          const prevLine = formattedLines[formattedLines.length - 1];
+          const trimmedPrev = prevLine.trim();
+          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+          if (trimmedPrev !== "" && !isPrevTable) {
+            formattedLines.push(""); // Inserta espacio seguro antes de iniciar la tabla
+          }
+        }
+      } else {
+        if (formattedLines.length > 0 && trimmedCurrent !== "") {
+          const prevLine = formattedLines[formattedLines.length - 1];
+          const trimmedPrev = prevLine.trim();
+          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+          if (isPrevTable) {
+            formattedLines.push(""); // Inserta espacio seguro al finalizar la tabla
+          }
+        }
+      }
+      
+      formattedLines.push(currentLine);
+    }
+    
+    let clean = formattedLines.join('\n');
+    clean = clean.replace(/([^\n])\s*\n*(#{1,6}\s+)/g, '$1\n\n$2');
+    clean = clean.replace(/^\s*\*\*\s*$/gm, '');
+    return clean;
+  };
+
+  useEffect(() => {
+    setIsResearchMode(isResearchModeProp);
+  }, [isResearchModeProp]);
+
+  useEffect(() => {
+    return () => {
+      if (activeTypingRef.current) {
+        clearInterval(activeTypingRef.current);
+      }
+    };
+  }, []);
+
+  // Función de utilidad para estructurar el progreso de investigación profunda en Markdown
+  const formatResearchProgress = (data) => {
+    let md = `**Investigación Profunda en curso...**\n\n`;
+    
+    if (data.status_message) {
+      md += `*Estado:* **${data.status_message}**\n\n`;
+    }
+    
+    if (data.steps && data.steps.length > 0) {
+      md += `**Fases y progreso:**\n`;
+      data.steps.forEach(step => {
+        md += `- ${step}\n`;
+      });
+      md += `\n`;
+    }
+    
+    if (data.documents_consulted && data.documents_consulted.length > 0) {
+      md += `**Documentos de biblioteca analizados (RAG):**\n`;
+      data.documents_consulted.forEach(doc => {
+        md += `- *${doc}*\n`;
+      });
+      md += `\n`;
+    }
+    
+    if (data.websites_consulted && data.websites_consulted.length > 0) {
+      md += `**Sitios web e informes consultados:**\n`;
+      data.websites_consulted.forEach(site => {
+        md += `- ${site}\n`;
+      });
+      md += `\n`;
+    }
+    
+    md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*\n\n`;
+    md += `*PIDA está investigando y redactando el informe en segundo plano...* <span class="inline-spinner"></span>`;
+    return md;
+  };
+
+  const streamStatusMessage = (targetText) => {
+    if (activeTypingRef.current) {
+      clearInterval(activeTypingRef.current);
+    }
+
+    let currentText = "";
+    let index = 0;
+
+    const typeStatusChunk = () => {
+      if (index < targetText.length) {
+        const chunkSize = Math.min(2, targetText.length - index);
+        currentText += targetText.substring(index, index + chunkSize);
+        index += chunkSize;
+
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            const content = newMessages[i].content;
+            if (
+              newMessages[i].role === 'model' && (
+                content.includes('Iniciando Investigación') ||
+                content.includes('Investigación Profunda en curso') ||
+                i === newMessages.length - 1
+              )
+            ) {
+              newMessages[i] = { ...newMessages[i], content: currentText };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      } else {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+      }
+    };
+
+    activeTypingRef.current = setInterval(typeStatusChunk, 25);
+  };
+
+  const pollResearchStatus = async (job_id) => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_CHAT}/api/research/${job_id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        console.warn(`Error polling research status: ${res.status}`);
+        setTimeout(() => pollResearchStatus(job_id), 5000);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.status === 'COMPLETADO') {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+        lastStatusRef.current = "";
+
+        const fullText = data.result;
+        let typedText = "";
+        let index = 0;
+        
+        const typeNextChunk = () => {
+          if (index < fullText.length) {
+            // Acelerador inteligente para textos masivos de investigación
+            const chunkSize = Math.min(25, fullText.length - index); 
+            typedText += fullText.substring(index, index + chunkSize);
+            index += chunkSize;
+            
+            setMessages(prev => {
+              const newMessages = [...prev];
+              for (let i = newMessages.length - 1; i >= 0; i--) {
+                if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso') || i === newMessages.length - 1)) {
+                  newMessages[i] = { ...newMessages[i], content: typedText };
+                  break;
+                }
+              }
+              return newMessages;
+            });
+            
+            // Pequeño retardo para dar efecto natural de fluido
+            setTimeout(typeNextChunk, 10);
+          }
+        };
+        
+        typeNextChunk();
+      } else if (data.status === 'ERROR') {
+        if (activeTypingRef.current) {
+          clearInterval(activeTypingRef.current);
+          activeTypingRef.current = null;
+        }
+        lastStatusRef.current = "";
+
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso'))) {
+              newMessages[i] = { ...newMessages[i], content: `❌ **Error en la investigación:** ${data.error || 'Ocurrió un problema.'}` };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
+        const progressContent = formatResearchProgress(data);
+        if (lastStatusRef.current !== progressContent) {
+          lastStatusRef.current = progressContent;
+          streamStatusMessage(progressContent);
+        }
+        setTimeout(() => pollResearchStatus(job_id), 5000);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (!isTyping && questionQueue.length > 0) {
@@ -204,9 +418,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const markdownComponents = {
     a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
     table: ({ node, ...props }) => (
-      <TableContainer component={Paper} sx={{ my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-        <Table size="small" {...props} />
-      </TableContainer>
+      <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+        <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'hidden' }}>
+          <Table size="small" sx={{ width: '100%' }} {...props} />
+        </TableContainer>
+      </div>
     ),
     thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: '#f1f5f9' }} {...props} />,
     tbody: ({ node, ...props }) => <TableBody {...props} />,
@@ -217,7 +433,8 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           fontWeight: 'bold', 
           color: 'var(--pida-primary)', 
           borderBottom: '2px solid #cbd5e1',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'normal',
+          lineHeight: 1.3
         }} 
         {...props} 
       />
@@ -226,7 +443,9 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       <TableCell 
         sx={{ 
           borderColor: '#e2e8f0',
-          verticalAlign: 'top'
+          verticalAlign: 'top',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word'
         }} 
         {...props} 
       />
@@ -320,106 +539,125 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         }
       }
 
-      const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: textToSend })
-      });
+      if (!isResearchMode) {
+        const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: textToSend })
+        });
 
-      if (!res.ok) {
-        if (res.status === 403 || res.status === 402 || res.status === 429) {
-             throw new Error("Has alcanzado tu límite de consultas o tu suscripción no está activa.");
-        }
-        throw new Error(`Error del servidor (${res.status})`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let fullText = "";
-      let streamBuffer = ""; // Búfer para no romper JSONs cortados por la red
-
-      // --- INICIO DE LÓGICA DE COLA DE ESCRITURA ---
-      const textQueue = { current: "" };
-      let isTypingEffectActive = false;
-
-      const typeWriterEffect = async () => {
-        isTypingEffectActive = true;
-        let lastRenderTime = Date.now(); // Control para no saturar a React (CPU)
-        
-        while (textQueue.current.length > 0) {
-          const qLen = textQueue.current.length;
-          
-          // ACELERADOR INTELIGENTE
-          let chunkSize = 1;
-          let delay = 15;
-          
-          if (qLen > 150) { 
-            chunkSize = 4; delay = 10; // Red rápida: Aceleramos tipeo
-          } else if (qLen > 50) { 
-            chunkSize = 2; delay = 12; // Velocidad normal
-          } else if (qLen < 15) { 
-            chunkSize = 1; delay = 35; // Red lenta: Frenamos para no hacer pausas bruscas
+        if (!res.ok) {
+          if (res.status === 403 || res.status === 402 || res.status === 429) {
+               throw new Error("Has alcanzado tu límite de consultas o tu suscripción no está activa.");
           }
-          
-          const chunk = textQueue.current.substring(0, chunkSize);
-          textQueue.current = textQueue.current.substring(chunkSize);
-          fullText += chunk;
-
-          // SALVATAJE DE CPU: Actualizamos Markdown solo cada 40ms
-          const now = Date.now();
-          if (now - lastRenderTime > 40 || textQueue.current.length === 0) {
-            setMessages(prev => {
-              const lastMsg = prev[prev.length - 1];
-              if (lastMsg && lastMsg.role === 'model') {
-                  return [...prev.slice(0, -1), { ...lastMsg, content: fullText }];
-              } else {
-                  return [...prev, { role: 'model', content: fullText }];
-              }
-            });
-            lastRenderTime = now;
-          }
-
-          // Micro-retraso visual
-          await new Promise(resolve => setTimeout(resolve, delay));
+          throw new Error(`Error del servidor (${res.status})`);
         }
-        isTypingEffectActive = false;
-      };
-      // --- FIN DE LÓGICA DE COLA ---
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        streamBuffer += decoder.decode(value, { stream: true });
-        const lines = streamBuffer.split('\n\n');
-        streamBuffer = lines.pop(); // Guarda el último pedazo incompleto para el siguiente ciclo
-        
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            try {
-              const data = JSON.parse(line.substring(6));
-              
-              if (data.event === 'status' && data.message) {
-                setStatusQueue(prev => [...prev, data.message]);
-              } 
-              else if (data.text) {
-                // Guardamos en la cola en lugar de frenar la red
-                textQueue.current += data.text;
-                
-                // Si el escritor está dormido, lo despertamos
-                if (!isTypingEffectActive) {
-                  typeWriterEffect();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let fullText = "";
+        let streamBuffer = ""; // Búfer para no romper JSONs cortados por la red
+
+        // --- INICIO DE LÓGICA DE COLA DE ESCRITURA ---
+        const textQueue = { current: "" };
+        let isTypingEffectActive = false;
+
+        const typeWriterEffect = async () => {
+          isTypingEffectActive = true;
+          let lastRenderTime = Date.now(); // Control para no saturar a React (CPU)
+          
+          while (textQueue.current.length > 0) {
+            const qLen = textQueue.current.length;
+            
+            // ACELERADOR INTELIGENTE
+            let chunkSize = 1;
+            let delay = 15;
+            
+            if (qLen > 150) { 
+              chunkSize = 4; delay = 10; // Red rápida: Aceleramos tipeo
+            } else if (qLen > 50) { 
+              chunkSize = 2; delay = 12; // Velocidad normal
+            } else if (qLen < 15) { 
+              chunkSize = 1; delay = 35; // Red lenta: Frenamos para no hacer pausas bruscas
+            }
+            
+            const chunk = textQueue.current.substring(0, chunkSize);
+            textQueue.current = textQueue.current.substring(chunkSize);
+            fullText += chunk;
+
+            // SALVATAJE DE CPU: Actualizamos Markdown solo cada 40ms
+            const now = Date.now();
+            if (now - lastRenderTime > 40 || textQueue.current.length === 0) {
+              setMessages(prev => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg && lastMsg.role === 'model') {
+                    return [...prev.slice(0, -1), { ...lastMsg, content: fullText }];
+                } else {
+                    return [...prev, { role: 'model', content: fullText }];
                 }
+              });
+              lastRenderTime = now;
+            }
+
+            // Micro-retraso visual
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          isTypingEffectActive = false;
+        };
+        // --- FIN DE LÓGICA DE COLA ---
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          streamBuffer += decoder.decode(value, { stream: true });
+          const lines = streamBuffer.split('\n\n');
+          streamBuffer = lines.pop(); // Guarda el último pedazo incompleto para el siguiente ciclo
+          
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                
+                if (data.event === 'status' && data.message) {
+                  setStatusQueue(prev => [...prev, data.message]);
+                } 
+                else if (data.text) {
+                  // Guardamos en la cola en lugar de frenar la red
+                  textQueue.current += data.text;
+                  
+                  // Si el escritor está dormido, lo despertamos
+                  if (!isTypingEffectActive) {
+                    typeWriterEffect();
+                  }
+                }
+              } catch (e) {
+                // Ignorar errores parciales de JSON de forma segura
               }
-            } catch (e) {
-              // Ignorar errores parciales de JSON de forma segura
             }
           }
         }
-      }
 
-      while (isTypingEffectActive || textQueue.current.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        while (isTypingEffectActive || textQueue.current.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } else {
+        setMessages(prev => [...prev, { role: 'model', content: 'Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí. <span class="inline-spinner"></span>' }]);
+        
+        const res = await fetch(`${API_CHAT}/api/research`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: textToSend, user_email: user.email })
+        });
+        
+        if (!res.ok) {
+           throw new Error(`Error del servidor (${res.status})`);
+        }
+        
+        const data = await res.json();
+        const job_id = data.job_id;
+        setIsTyping(false);
+        pollResearchStatus(job_id);
       }
 
     } catch (error) {
@@ -500,7 +738,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
-      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>{msg.content}</ReactMarkdown>;
+      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>;
     }
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
@@ -551,22 +789,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     displayContent = displayContent.replace(/["']br["']/g, '<br />');
 
-    if (displayContent.includes('## Fuentes y Jurisprudencia')) {
-      const splitPoint = '## Fuentes y Jurisprudencia';
-      const parts = displayContent.split(splitPoint);
-      let fuentesText = parts[1];
-      
-      fuentesText = fuentesText.replace(/\|?\s*:?-{2,}:?\s*\|?/g, '');
-      fuentesText = fuentesText.replace(/\|/g, ' • ');
-      
-      displayContent = parts[0] + splitPoint + fuentesText;
-    }
-
     return (
       <>
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
-            {displayContent}
+            {formatMarkdown(displayContent)}
           </ReactMarkdown>
         </div>
         
@@ -686,7 +913,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           minRows={2}
           maxRows={5}
           fullWidth
-          placeholder="Consulta a PIDA..."
+          placeholder={isResearchMode ? "Ingresa tu tema para investigación profunda..." : "Consulta a PIDA..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) handleSend(e); }}
@@ -714,7 +941,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             disabled={isTyping}
             sx={{ width: 220, py: 1.2, borderRadius: 2, fontWeight: 600, bgcolor: 'var(--pida-primary)', '&:hover': { bgcolor: 'var(--pida-accent)' } }}
           >
-            Enviar
+            {isResearchMode ? 'Investigar' : 'Enviar'}
           </Button>
         </Box>
       </form>

@@ -6,13 +6,13 @@ import 'firebase/compat/analytics';
 import 'firebase/compat/remote-config';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyC5nqsx4Fe4gMKkKdvnbMf8VFnI6TYL64k",
-    authDomain: "pida-ai.com",
-    projectId: "pida-ai-v20",
-    storageBucket: "pida-ai-v20.firebasestorage.app",
-    messagingSenderId: "465781488910",
-    appId: "1:465781488910:web:6f9c2b4bc91317a6bbab5f",
-    measurementId: "G-4FEDD254GY"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Inicializar Firebase solo si no se ha iniciado antes
@@ -20,7 +20,7 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Exportar los servicios para usarlos en el resto de la app
+// Exportar los servicios
 export const auth = firebase.auth();
 export const db = firebase.firestore();
 export const remoteConfig = firebase.remoteConfig();
