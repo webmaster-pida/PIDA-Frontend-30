@@ -171,16 +171,34 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       const data = await res.json();
 
       if (data.status === 'COMPLETADO') {
-        setMessages(prev => {
-          const newMessages = [...prev];
-          for (let i = newMessages.length - 1; i >= 0; i--) {
-            if (newMessages[i].role === 'model' && newMessages[i].content.includes('Iniciando Investigación Profunda')) {
-              newMessages[i] = { ...newMessages[i], content: data.result };
-              break;
-            }
+        const fullText = data.result;
+        let typedText = "";
+        let index = 0;
+        
+        const typeNextChunk = () => {
+          if (index < fullText.length) {
+            // Acelerador inteligente para textos masivos de investigación
+            const chunkSize = Math.min(25, fullText.length - index); 
+            typedText += fullText.substring(index, index + chunkSize);
+            index += chunkSize;
+            
+            setMessages(prev => {
+              const newMessages = [...prev];
+              for (let i = newMessages.length - 1; i >= 0; i--) {
+                if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || i === newMessages.length - 1)) {
+                  newMessages[i] = { ...newMessages[i], content: typedText };
+                  break;
+                }
+              }
+              return newMessages;
+            });
+            
+            // Pequeño retardo para dar efecto natural de fluido
+            setTimeout(typeNextChunk, 10);
           }
-          return newMessages;
-        });
+        };
+        
+        typeNextChunk();
       } else if (data.status === 'ERROR') {
         setMessages(prev => {
           const newMessages = [...prev];
