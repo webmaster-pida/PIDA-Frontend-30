@@ -766,3 +766,5 @@ textarea.form-input { resize: vertical; }
     position: relative;
     z-index: 1;
 }
+.inline-spinner { display: inline-block; width: 1em; height: 1em; border: 2px solid rgba(29, 53, 87, 0.2); border-radius: 50%; border-top-color: var(--pida-accent, #0056b3); animation: spin 1s linear infinite; vertical-align: middle; margin-left: 8px; }
+

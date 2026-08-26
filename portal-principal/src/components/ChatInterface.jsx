@@ -238,7 +238,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     }
     
     md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*\n\n`;
-    md += `⏳ *PIDA está investigando y redactando el informe en segundo plano...*`;
+    md += `*PIDA está investigando y redactando el informe en segundo plano...* <span class="inline-spinner"></span>`;
     return md;
   };
 
@@ -642,7 +642,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           await new Promise(resolve => setTimeout(resolve, 50));
         }
       } else {
-        setMessages(prev => [...prev, { role: 'model', content: 'Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí.' }]);
+        setMessages(prev => [...prev, { role: 'model', content: 'Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí. <span class="inline-spinner"></span>' }]);
         
         const res = await fetch(`${API_CHAT}/api/research`, {
           method: 'POST',
