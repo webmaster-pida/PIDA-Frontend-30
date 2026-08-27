@@ -5,8 +5,24 @@ import rehypeRaw from 'rehype-raw';
 import { Exporter, getTimestampedName } from '../utils/exporter';
 
 import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import mermaid from 'mermaid';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
+
+// Configuración global de Mermaid para garantizar responsividad nativa
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  flowchart: { useMaxWidth: true },
+  sequence: { useMaxWidth: true },
+  gantt: { useMaxWidth: true },
+  journey: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+  state: { useMaxWidth: true },
+  er: { useMaxWidth: true },
+  pie: { useMaxWidth: true }
+});
 
 const PreviewLink = ({ href, children, node, title, ...props }) => {
   const [previewData, setPreviewData] = useState(null);
@@ -142,6 +158,74 @@ const PreviewLink = ({ href, children, node, title, ...props }) => {
     </Tooltip>
   );
 }
+
+// Componente Helper para renderizar diagramas de Mermaid de forma asíncrona y responsiva
+const MermaidChart = ({ chartCode }) => {
+  const [svgHtml, setSvgHtml] = useState('');
+  const [isError, setIsError] = useState(false);
+  const containerId = useRef(`mermaid-container-${Math.random().toString(36).substring(2, 9)}`);
+
+  useEffect(() => {
+    let isMounted = true;
+    const renderDiagram = async () => {
+      try {
+        const cleanCode = chartCode.trim();
+        if (!cleanCode) return;
+
+        // ID único por render para evitar conflictos de ID en el DOM de Mermaid
+        const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
+        const { svg } = await mermaid.render(uniqueId, cleanCode);
+
+        if (isMounted) {
+          setSvgHtml(svg);
+          setIsError(false);
+        }
+      } catch (error) {
+        // Control silencioso de errores durante la generación incremental (streaming)
+        if (isMounted) {
+          setIsError(true);
+        }
+      }
+    };
+
+    renderDiagram();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [chartCode]);
+
+  if (!svgHtml && isError) {
+    return (
+      <pre style={{ color: '#64748b', fontSize: '0.85em', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
+        ⏳ Generando diagrama de flujo...
+      </pre>
+    );
+  }
+
+  return (
+    <div style={{ width: '100%', maxWidth: '100%' }}>
+      <style>{`
+        #${containerId.current} svg {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+      `}</style>
+      <div 
+        id={containerId.current}
+        style={{
+          width: '100%',
+          maxWidth: '100%',
+          display: 'block',
+          margin: '15px 0',
+          textAlign: 'center'
+        }}
+        dangerouslySetInnerHTML={{ __html: svgHtml }}
+      />
+    </div>
+  );
+};
 
 export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchModeProp = false }) {
   const [messages, setMessages] = useState([]);
@@ -281,6 +365,50 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
   const markdownComponents = {
     a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
+    code: ({ node, inline, className, children, ...props }) => {
+      const match = /language-([\w-]+)/.exec(className || '');
+      
+      if (!inline && match && match[1] === 'mermaid') {
+        return <MermaidChart chartCode={String(children)} />;
+      }
+      
+      return (
+        <code 
+          className={className} 
+          style={{ 
+            backgroundColor: '#f1f5f9', 
+            padding: '2px 4px', 
+            borderRadius: '4px', 
+            fontSize: '0.9em',
+            whiteSpace: 'pre-wrap', 
+            wordBreak: 'break-all'
+          }} 
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    },
+    pre: ({ node, children, ...props }) => {
+      // Evita renderizar fondo gris o marcos de código para diagramas de Mermaid
+      const isMermaid = children && React.isValidElement(children) && children.props.className?.includes('language-mermaid');
+      if (isMermaid) {
+        return <>{children}</>;
+      }
+      return (
+        <pre style={{ 
+          whiteSpace: 'pre-wrap', 
+          wordBreak: 'break-all', 
+          overflowX: 'hidden', 
+          maxWidth: '100%', 
+          backgroundColor: '#f1f5f9', 
+          padding: '10px', 
+          borderRadius: '8px' 
+        }} {...props}>
+          {children}
+        </pre>
+      );
+    },
     table: ({ node, ...props }) => (
       <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
         <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
