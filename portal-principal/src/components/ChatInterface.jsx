@@ -12,6 +12,7 @@ const API_CHAT = import.meta.env.VITE_API_CHAT;
 // Configuración global de Mermaid para garantizar responsividad nativa
 mermaid.initialize({
   startOnLoad: false,
+  suppressErrorRendering: true,
   theme: 'default',
   securityLevel: 'loose',
   flowchart: { useMaxWidth: true },
@@ -163,45 +164,73 @@ const PreviewLink = ({ href, children, node, title, ...props }) => {
 }
 
 // Componente Helper para renderizar diagramas de Mermaid de forma asíncrona y responsiva
-const MermaidChart = ({ chartCode }) => {
-  const [svgHtml, setSvgHtml] = useState('');
-  const [isError, setIsError] = useState(false);
+const MermaidChart = ({ chartCode, isTyping }) => {
+  const [svgContent, setSvgContent] = useState('');
+  const [error, setError] = useState(false);
+  const [isParsing, setIsParsing] = useState(true);
   const containerId = useRef(`mermaid-container-${Math.random().toString(36).substring(2, 9)}`);
 
   useEffect(() => {
     let isMounted = true;
+    setIsParsing(true);
+    setError(false);
+
     const renderDiagram = async () => {
       try {
         const cleanCode = chartCode.trim();
         if (!cleanCode) return;
 
-          // Validar sintaxis antes de renderizar usando try/catch y await mermaid.parse
-          await mermaid.parse(cleanCode);
+        // Validar sintaxis antes de renderizar usando try/catch y await mermaid.parse
+        await mermaid.parse(cleanCode);
 
         // ID único por render para evitar conflictos de ID en el DOM de Mermaid
         const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(uniqueId, cleanCode);
 
         if (isMounted) {
-          setSvgHtml(svg);
-          setIsError(false);
+          setSvgContent(svg);
+          setError(false);
+          setIsParsing(false);
         }
-      } catch (error) {
-          // Si parse falla durante el streaming, mantenemos el loader de forma silenciosa sin lanzar errores
+      } catch (err) {
         if (isMounted) {
-          setIsError(true);
+          if (!isTyping) {
+            setError(true);
+            setIsParsing(false);
+          } else {
+            // Mientras esté escribiendo, mantenemos el estado de carga silenciosamente
+            setError(false);
+            setIsParsing(true);
+          }
         }
       }
     };
 
-    renderDiagram();
+    const timer = setTimeout(renderDiagram, 200);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [chartCode]);
+  }, [chartCode, isTyping]);
 
-  if (!svgHtml) {
+  if (error && !isTyping) {
+    return (
+      <pre style={{ 
+        whiteSpace: 'pre-wrap', 
+        wordBreak: 'break-all', 
+        backgroundColor: '#f1f5f9', 
+        padding: '10px', 
+        borderRadius: '8px',
+        fontSize: '0.9em',
+        color: '#334155'
+      }}>
+        <code>{chartCode}</code>
+      </pre>
+    );
+  }
+
+  if (isParsing || !svgContent) {
     return (
       <pre style={{ color: '#64748b', fontSize: '0.85em', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
         ⏳ Generando diagrama de flujo...
@@ -227,7 +256,7 @@ const MermaidChart = ({ chartCode }) => {
           margin: '15px 0',
           textAlign: 'center'
         }}
-        dangerouslySetInnerHTML={{ __html: svgHtml }}
+        dangerouslySetInnerHTML={{ __html: svgContent }}
       />
     </div>
   );
@@ -240,6 +269,20 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
+
+  // Interceptador dinámico de componentes Markdown para inyectar 'isTyping' a MermaidChart
+  const customMarkdownComponents = React.useMemo(() => ({
+    ...markdownComponents,
+    code: ({ node, inline, className, children, ...props }) => {
+      const match = /language-([\w-]+)/.exec(className || '');
+      
+      if (!inline && match && match[1] === 'mermaid') {
+        return <MermaidChart chartCode={String(children)} isTyping={isTyping} />;
+      }
+      
+      return markdownComponents.code({ node, inline, className, children, ...props });
+    }
+  }), [isTyping]);
 
   const formatMarkdown = (text) => {
     if (!text) return "";
@@ -754,7 +797,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
-      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>;
+      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>;
     }
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
@@ -836,7 +879,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     return (
       <>
         <div className="markdown-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>
             {formatMarkdown(displayContent)}
           </ReactMarkdown>
         </div>
