@@ -6,6 +6,10 @@ import { Exporter, getTimestampedName } from '../utils/exporter';
 
 import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel, ToggleButtonGroup, ToggleButton, Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import mermaid from 'mermaid';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
@@ -319,60 +323,120 @@ const MermaidChart = ({ chartCode, isTyping }) => {
       <Dialog
         open={openModal}
         onClose={() => setOpenModal(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
             borderRadius: '12px',
             p: 2,
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            bgcolor: '#ffffff'
           }
         }}
         sx={{ zIndex: 9999999 }}
       >
-        <IconButton
-          onClick={() => setOpenModal(false)}
-          sx={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            bgcolor: '#F1F5F9',
-            zIndex: 10,
-            '&:hover': { bgcolor: '#E2E8F0' }
-          }}
+        <TransformWrapper
+          initialScale={1}
+          minScale={0.2}
+          maxScale={8}
+          centerOnInit
         >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            overflow: 'auto',
-            maxHeight: '85vh',
-            p: 4,
-            mt: 4
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              '& svg': {
-                width: '100% !important',
-                maxWidth: '100% !important',
-                height: 'auto !important',
-                maxHeight: '75vh !important'
-              }
-            }}
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
-        </DialogContent>
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <>
+              {/* Barra de herramientas flotante para controles de zoom */}
+              <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1, zIndex: 10 }}>
+                <Tooltip title="Acercar">
+                  <IconButton
+                    onClick={() => zoomIn()}
+                    sx={{ bgcolor: '#F1F5F9', '&:hover': { bgcolor: '#E2E8F0' } }}
+                    size="small"
+                  >
+                    <ZoomInIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Alejar">
+                  <IconButton
+                    onClick={() => zoomOut()}
+                    sx={{ bgcolor: '#F1F5F9', '&:hover': { bgcolor: '#E2E8F0' } }}
+                    size="small"
+                  >
+                    <ZoomOutIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Restablecer tamaño">
+                  <IconButton
+                    onClick={() => resetTransform()}
+                    sx={{ bgcolor: '#F1F5F9', '&:hover': { bgcolor: '#E2E8F0' } }}
+                    size="small"
+                  >
+                    <RestartAltIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+
+              <IconButton
+                onClick={() => setOpenModal(false)}
+                sx={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  bgcolor: '#F1F5F9',
+                  zIndex: 10,
+                  '&:hover': { bgcolor: '#E2E8F0' }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+
+              <DialogContent 
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  overflow: 'hidden',
+                  height: '75vh',
+                  maxHeight: '85vh',
+                  p: 4,
+                  mt: 6,
+                  bgcolor: '#f8fafc',
+                  borderRadius: '8px'
+                }}
+              >
+                <TransformComponent
+                  wrapperStyle={{
+                    width: '100%',
+                    height: '100%',
+                  }}
+                  contentStyle={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: '100%',
+                      height: '100%',
+                      '& svg': {
+                        width: '100% !important',
+                        maxWidth: 'none !important',
+                        height: 'auto !important',
+                        maxHeight: '70vh !important'
+                      }
+                    }}
+                    dangerouslySetInnerHTML={{ __html: svgContent }}
+                  />
+                </TransformComponent>
+              </DialogContent>
+            </>
+          )}
+        </TransformWrapper>
       </Dialog>
     </>
   );

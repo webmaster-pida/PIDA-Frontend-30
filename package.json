@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "mermaid": "^11.17.2"
+    "mermaid": "^11.17.2",
+    "react-zoom-pan-pinch": "^4.0.4"
   }
 }
