@@ -24,6 +24,9 @@ mermaid.initialize({
   pie: { useMaxWidth: true }
 });
 
+// Silenciar errores por consola de Mermaid globales para evitar vibraciones o logs ruidosos durante el streaming
+mermaid.parseError = () => {};
+
 const PreviewLink = ({ href, children, node, title, ...props }) => {
   const [previewData, setPreviewData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -172,6 +175,9 @@ const MermaidChart = ({ chartCode }) => {
         const cleanCode = chartCode.trim();
         if (!cleanCode) return;
 
+          // Validar sintaxis antes de renderizar usando try/catch y await mermaid.parse
+          await mermaid.parse(cleanCode);
+
         // ID único por render para evitar conflictos de ID en el DOM de Mermaid
         const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(uniqueId, cleanCode);
@@ -181,7 +187,7 @@ const MermaidChart = ({ chartCode }) => {
           setIsError(false);
         }
       } catch (error) {
-        // Control silencioso de errores durante la generación incremental (streaming)
+          // Si parse falla durante el streaming, mantenemos el loader de forma silenciosa sin lanzar errores
         if (isMounted) {
           setIsError(true);
         }
@@ -195,7 +201,7 @@ const MermaidChart = ({ chartCode }) => {
     };
   }, [chartCode]);
 
-  if (!svgHtml && isError) {
+  if (!svgHtml) {
     return (
       <pre style={{ color: '#64748b', fontSize: '0.85em', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
         ⏳ Generando diagrama de flujo...
@@ -204,7 +210,7 @@ const MermaidChart = ({ chartCode }) => {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
       <style>{`
         #${containerId.current} svg {
           width: 100% !important;
@@ -238,41 +244,75 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const formatMarkdown = (text) => {
     if (!text) return "";
     
-    const lines = text.split('\n');
-    const formattedLines = [];
+    // Dividimos el texto en segmentos de código de Mermaid y texto markdown normal
+    const segments = [];
+    let currentIndex = 0;
     
-    for (let i = 0; i < lines.length; i++) {
-      const currentLine = lines[i];
-      const trimmedCurrent = currentLine.trim();
-      const isCurrentTable = trimmedCurrent.startsWith('|') && trimmedCurrent.endsWith('|');
-      
-      if (isCurrentTable) {
-        if (formattedLines.length > 0) {
-          const prevLine = formattedLines[formattedLines.length - 1];
-          const trimmedPrev = prevLine.trim();
-          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
-          if (trimmedPrev !== "" && !isPrevTable) {
-            formattedLines.push(""); // Inserta espacio seguro antes de iniciar la tabla
-          }
-        }
-      } else {
-        if (formattedLines.length > 0 && trimmedCurrent !== "") {
-          const prevLine = formattedLines[formattedLines.length - 1];
-          const trimmedPrev = prevLine.trim();
-          const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
-          if (isPrevTable) {
-            formattedLines.push(""); // Inserta espacio seguro al finalizar la tabla
-          }
-        }
+    while (currentIndex < text.length) {
+      const mermaidStartIndex = text.indexOf('```mermaid', currentIndex);
+      if (mermaidStartIndex === -1) {
+        segments.push({ type: 'text', content: text.substring(currentIndex) });
+        break;
       }
       
-      formattedLines.push(currentLine);
+      if (mermaidStartIndex > currentIndex) {
+        segments.push({ type: 'text', content: text.substring(currentIndex, mermaidStartIndex) });
+      }
+      
+      const mermaidEndIndex = text.indexOf('```', mermaidStartIndex + 10);
+      if (mermaidEndIndex === -1) {
+        // Bloque de Mermaid incompleto (streaming en curso)
+        segments.push({ type: 'mermaid', content: text.substring(mermaidStartIndex) });
+        break;
+      } else {
+        const endPos = mermaidEndIndex + 3;
+        segments.push({ type: 'mermaid', content: text.substring(mermaidStartIndex, endPos) });
+        currentIndex = endPos;
+      }
     }
     
-    let clean = formattedLines.join('\n');
-    clean = clean.replace(/([^\n])\s*\n*(#{1,6}\s+)/g, '$1\n\n$2');
-    clean = clean.replace(/^\s*\*\*\s*$/gm, '');
-    return clean;
+    const processed = segments.map(seg => {
+      if (seg.type === 'mermaid') {
+        return seg.content; // Se mantiene el bloque Mermaid intacto para evitar romper saltos de línea
+      }
+      
+      const lines = seg.content.split('\n');
+      const formattedLines = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const currentLine = lines[i];
+        const trimmedCurrent = currentLine.trim();
+        const isCurrentTable = trimmedCurrent.startsWith('|') && trimmedCurrent.endsWith('|');
+        
+        if (isCurrentTable) {
+          if (formattedLines.length > 0) {
+            const prevLine = formattedLines[formattedLines.length - 1];
+            const trimmedPrev = prevLine.trim();
+            const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+            if (trimmedPrev !== "" && !isPrevTable) {
+              formattedLines.push("");
+            }
+          }
+        } else {
+          if (formattedLines.length > 0 && trimmedCurrent !== "") {
+            const prevLine = formattedLines[formattedLines.length - 1];
+            const trimmedPrev = prevLine.trim();
+            const isPrevTable = trimmedPrev.startsWith('|') && trimmedPrev.endsWith('|');
+            if (isPrevTable) {
+              formattedLines.push("");
+            }
+          }
+        }
+        formattedLines.push(currentLine);
+      }
+      
+      let clean = formattedLines.join('\n');
+      clean = clean.replace(/([^\n])\s*\n*(#{1,6}\s+)/g, '$1\n\n$2');
+      clean = clean.replace(/^\s*\*\*\s*$/gm, '');
+      return clean;
+    });
+    
+    return processed.join('');
   };
 
   // Función de utilidad para estructurar el progreso de investigación profunda en Markdown
@@ -720,12 +760,40 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
 
-    displayContent = displayContent.split('\n').map(line => {
-      const count = (line.match(/\*\*/g) || []).length;
-      if (count % 2 !== 0) {
-        return line.replace(/\*\*/g, ''); 
+        // Procesamos las líneas para corregir negritas incompletas, pero manteniendo intactos los bloques de Mermaid
+        const segments = [];
+        let currentIndex = 0;
+        while (currentIndex < displayContent.length) {
+          const mStart = displayContent.indexOf('```mermaid', currentIndex);
+          if (mStart === -1) {
+            segments.push({ type: 'text', content: displayContent.substring(currentIndex) });
+            break;
       }
-      return line;
+          if (mStart > currentIndex) {
+            segments.push({ type: 'text', content: displayContent.substring(currentIndex, mStart) });
+          }
+          const mEnd = displayContent.indexOf('```', mStart + 10);
+          if (mEnd === -1) {
+            segments.push({ type: 'mermaid', content: displayContent.substring(mStart) });
+            break;
+          } else {
+            const endPos = mEnd + 3;
+            segments.push({ type: 'mermaid', content: displayContent.substring(mStart, endPos) });
+            currentIndex = endPos;
+          }
+        }
+
+        displayContent = segments.map(seg => {
+          if (seg.type === 'mermaid') {
+            return seg.content;
+          }
+          return seg.content.split('\n').map(line => {
+            const count = (line.match(/\*\*/g) || []).length;
+            if (count % 2 !== 0) {
+              return line.replace(/\*\*/g, ''); 
+            }
+            return line;
+          }).join('\n');
     }).join('\n');
 
     let questions = [];
