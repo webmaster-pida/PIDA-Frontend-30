@@ -977,7 +977,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
-      return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>;
+      return (
+        <div className="markdown-content">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>{formatMarkdown(msg.content)}</ReactMarkdown>
+        </div>
+      );
     }
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
