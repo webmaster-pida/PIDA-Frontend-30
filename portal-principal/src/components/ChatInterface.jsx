@@ -14,7 +14,7 @@ import mermaid from 'mermaid';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
 
-// Configuración global de Mermaid para garantizar responsividad nativa
+// Configuración global de Mermaid para garantizar responsividad nativa -prueba
 mermaid.initialize({
   startOnLoad: false,
   suppressErrorRendering: true,
