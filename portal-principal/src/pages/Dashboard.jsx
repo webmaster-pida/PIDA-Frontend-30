@@ -395,55 +395,6 @@ export default function Dashboard({ user, onRequireSubscription }) {
             {isMobile ? 'Nuevo' : (currentView === 'investigador' ? 'Nuevo Chat' : currentView === 'analizador' ? 'Nuevo Análisis' : 'Nuevo Caso')}
           </Button>
           
-          <ToggleButtonGroup
-            value={currentView}
-            exclusive
-            onChange={(event, newView) => {
-              if (newView !== null && (newView === 'investigador' || newView === 'analizador')) {
-                setCurrentView(newView);
-                const type = newView === 'investigador' ? 'investigador' : 'ana';
-                setResetSignals(prev => ({ ...prev, [type]: prev[type] + 1 })); 
-                if (newView === 'investigador') {
-                  setLoadData(p => ({ ...p, investigador: null }));
-                } else {
-                  setLoadData(p => ({ ...p, ana: null })); 
-                }
-              }
-            }}
-            size="small"
-            sx={{
-              bgcolor: '#f1f5f9',
-              p: 0.5,
-              borderRadius: '8px',
-              border: 'none',
-              '& .MuiToggleButtonGroup-grouped': {
-                border: 0,
-                borderRadius: '6px !important',
-                mx: 0.5,
-                px: { xs: 1.5, sm: 2.5 },
-                py: 0.5,
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                fontWeight: 700,
-                textTransform: 'none',
-                color: '#475569',
-                '&.Mui-selected': {
-                  bgcolor: 'white',
-                  color: 'var(--pida-primary, #101852)',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  '&:hover': {
-                    bgcolor: 'white',
-                  }
-                },
-                '&:hover': {
-                  bgcolor: '#e2e8f0',
-                }
-              }
-            }}
-          >
-            <ToggleButton value="investigador">Chat Experto</ToggleButton>
-            <ToggleButton value="analizador">Investigación Profunda</ToggleButton>
-          </ToggleButtonGroup>
-
           {currentView !== 'cuenta' && (
             <>
               <Button 

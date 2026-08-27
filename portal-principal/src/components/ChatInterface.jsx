@@ -1169,16 +1169,55 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           <ToggleButtonGroup
             value={isResearchMode ? 'deep_research' : 'chat'}
             exclusive
-            onChange={(e, newMode) => {
+            onChange={(event, newMode) => {
               if (newMode !== null) {
-                setIsResearchMode(newMode === 'deep_research');
+                const targetResearch = newMode === 'deep_research';
+                if (targetResearch !== isResearchMode) {
+                  setIsResearchMode(targetResearch);
+                  setMessages([]);
+                  setChatId(null);
+                  setInput('');
+                  setQuestionQueue([]);
+                  setIsAtBottom(true);
+                }
               }
             }}
             size="small"
-            sx={{ bgcolor: 'white' }}
+            sx={{
+              bgcolor: '#f1f5f9',
+              p: 0.5,
+              borderRadius: '8px',
+              border: 'none',
+              display: 'flex',
+              width: { xs: '100%', sm: 'auto' },
+              '& .MuiToggleButtonGroup-grouped': {
+                border: 0,
+                borderRadius: '6px !important',
+                mx: 0.5,
+                flexGrow: { xs: 1, sm: 0 },
+                px: { xs: 1.5, sm: 2.5 },
+                py: 0.5,
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                fontWeight: 700,
+                textTransform: 'none',
+                color: '#475569',
+                whiteSpace: 'nowrap',
+                '&.Mui-selected': {
+                  bgcolor: 'white',
+                  color: 'var(--pida-primary, #101852)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  '&:hover': {
+                    bgcolor: 'white',
+                  }
+                },
+                '&:hover': {
+                  bgcolor: '#e2e8f0',
+                }
+              }
+            }}
           >
-            <ToggleButton value="chat" sx={{ textTransform: 'none', fontWeight: 600, px: 2 }}>💬 Chat Experto</ToggleButton>
-            <ToggleButton value="deep_research" sx={{ textTransform: 'none', fontWeight: 600, px: 2 }}>🔍 Investigación Profunda</ToggleButton>
+            <ToggleButton value="chat">Chat Experto</ToggleButton>
+            <ToggleButton value="deep_research">Investigación Profunda</ToggleButton>
           </ToggleButtonGroup>
 
           {messages.length > 0 && (
