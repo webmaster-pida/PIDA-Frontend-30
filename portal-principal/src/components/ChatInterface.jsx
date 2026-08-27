@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; 
 import { Exporter, getTimestampedName } from '../utils/exporter';
 
-import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel } from '@mui/material';
+import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel, ToggleButtonGroup, ToggleButton } from '@mui/material';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
 
@@ -150,8 +150,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
-  const activeTypingRef = useRef(null);
-  const lastStatusRef = useRef("");
 
   const formatMarkdown = (text) => {
     if (!text) return "";
@@ -193,18 +191,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     return clean;
   };
 
-  useEffect(() => {
-    setIsResearchMode(isResearchModeProp);
-  }, [isResearchModeProp]);
-
-  useEffect(() => {
-    return () => {
-      if (activeTypingRef.current) {
-        clearInterval(activeTypingRef.current);
-      }
-    };
-  }, []);
-
   // Función de utilidad para estructurar el progreso de investigación profunda en Markdown
   const formatResearchProgress = (data) => {
     let md = `**Investigación Profunda en curso...**\n\n`;
@@ -240,128 +226,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     md += `*Este proceso puede tomar de 2 a 5 minutos. Puedes seguir usando PIDA o cerrar esta ventana; el reporte se guardará en tu historial de forma segura.*\n\n`;
     md += `*PIDA está investigando y redactando el informe en segundo plano...* <span class="inline-spinner"></span>`;
     return md;
-  };
-
-  const streamStatusMessage = (targetText) => {
-    if (activeTypingRef.current) {
-      clearInterval(activeTypingRef.current);
-    }
-
-    let currentText = "";
-    let index = 0;
-
-    const typeStatusChunk = () => {
-      if (index < targetText.length) {
-        const chunkSize = Math.min(2, targetText.length - index);
-        currentText += targetText.substring(index, index + chunkSize);
-        index += chunkSize;
-
-        setMessages(prev => {
-          const newMessages = [...prev];
-          for (let i = newMessages.length - 1; i >= 0; i--) {
-            const content = newMessages[i].content;
-            if (
-              newMessages[i].role === 'model' && (
-                content.includes('Iniciando Investigación') ||
-                content.includes('Investigación Profunda en curso') ||
-                i === newMessages.length - 1
-              )
-            ) {
-              newMessages[i] = { ...newMessages[i], content: currentText };
-              break;
-            }
-          }
-          return newMessages;
-        });
-      } else {
-        if (activeTypingRef.current) {
-          clearInterval(activeTypingRef.current);
-          activeTypingRef.current = null;
-        }
-      }
-    };
-
-    activeTypingRef.current = setInterval(typeStatusChunk, 25);
-  };
-
-  const pollResearchStatus = async (job_id) => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_CHAT}/api/research/${job_id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!res.ok) {
-        console.warn(`Error polling research status: ${res.status}`);
-        setTimeout(() => pollResearchStatus(job_id), 5000);
-        return;
-      }
-
-      const data = await res.json();
-
-      if (data.status === 'COMPLETADO') {
-        if (activeTypingRef.current) {
-          clearInterval(activeTypingRef.current);
-          activeTypingRef.current = null;
-        }
-        lastStatusRef.current = "";
-
-        const fullText = data.result;
-        let typedText = "";
-        let index = 0;
-        
-        const typeNextChunk = () => {
-          if (index < fullText.length) {
-            // Acelerador inteligente para textos masivos de investigación
-            const chunkSize = Math.min(25, fullText.length - index); 
-            typedText += fullText.substring(index, index + chunkSize);
-            index += chunkSize;
-            
-            setMessages(prev => {
-              const newMessages = [...prev];
-              for (let i = newMessages.length - 1; i >= 0; i--) {
-                if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso') || i === newMessages.length - 1)) {
-                  newMessages[i] = { ...newMessages[i], content: typedText };
-                  break;
-                }
-              }
-              return newMessages;
-            });
-            
-            // Pequeño retardo para dar efecto natural de fluido
-            setTimeout(typeNextChunk, 10);
-          }
-        };
-        
-        typeNextChunk();
-      } else if (data.status === 'ERROR') {
-        if (activeTypingRef.current) {
-          clearInterval(activeTypingRef.current);
-          activeTypingRef.current = null;
-        }
-        lastStatusRef.current = "";
-
-        setMessages(prev => {
-          const newMessages = [...prev];
-          for (let i = newMessages.length - 1; i >= 0; i--) {
-            if (newMessages[i].role === 'model' && (newMessages[i].content.includes('Iniciando Investigación Profunda') || newMessages[i].content.includes('Investigación Profunda en curso'))) {
-              newMessages[i] = { ...newMessages[i], content: `❌ **Error en la investigación:** ${data.error || 'Ocurrió un problema.'}` };
-              break;
-            }
-          }
-          return newMessages;
-        });
-      } else if (data.status === 'PENDIENTE' || data.status === 'PROCESANDO') {
-        const progressContent = formatResearchProgress(data);
-        if (lastStatusRef.current !== progressContent) {
-          lastStatusRef.current = progressContent;
-          streamStatusMessage(progressContent);
-        }
-        setTimeout(() => pollResearchStatus(job_id), 5000);
-      }
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   useEffect(() => {
@@ -539,11 +403,13 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         }
       }
 
-      if (!isResearchMode) {
         const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: textToSend })
+          body: JSON.stringify({ 
+            prompt: textToSend,
+            mode: isResearchMode ? "deep_research" : "chat"
+          })
         });
 
         if (!res.ok) {
@@ -641,24 +507,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         while (isTypingEffectActive || textQueue.current.length > 0) {
           await new Promise(resolve => setTimeout(resolve, 50));
         }
-      } else {
-        setMessages(prev => [...prev, { role: 'model', content: 'Iniciando Investigación Profunda... Esto puede tardar varios minutos. Puedes cerrar la ventana o esperar aquí. <span class="inline-spinner"></span>' }]);
-        
-        const res = await fetch(`${API_CHAT}/api/research`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: textToSend, user_email: user.email })
-        });
-        
-        if (!res.ok) {
-           throw new Error(`Error del servidor (${res.status})`);
-        }
-        
-        const data = await res.json();
-        const job_id = data.job_id;
-        setIsTyping(false);
-        pollResearchStatus(job_id);
-      }
 
     } catch (error) {
       console.error(error);
@@ -897,16 +745,31 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       )}
 
       <form className="pida-view-form" onSubmit={(e) => handleSend(e)}>
-        
-        {messages.length > 0 && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, mt: -1.5 }}>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, mt: messages.length > 0 ? -1.5 : 0 }}>
+          <ToggleButtonGroup
+            value={isResearchMode ? 'deep_research' : 'chat'}
+            exclusive
+            onChange={(e, newMode) => {
+              if (newMode !== null) {
+                setIsResearchMode(newMode === 'deep_research');
+              }
+            }}
+            size="small"
+            sx={{ bgcolor: 'white' }}
+          >
+            <ToggleButton value="chat" sx={{ textTransform: 'none', fontWeight: 600, px: 2 }}>💬 Chat Experto</ToggleButton>
+            <ToggleButton value="deep_research" sx={{ textTransform: 'none', fontWeight: 600, px: 2 }}>🔍 Investigación Profunda</ToggleButton>
+          </ToggleButtonGroup>
+
+          {messages.length > 0 && (
             <ButtonGroup size="small" variant="outlined" color="inherit" sx={{ borderColor: '#e2e8f0', bgcolor: 'white' }}>
               <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={handleTXTDownload}>TXT</Button>
               <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={() => handleBackendDownload('docx')}>DOCX</Button>
               <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={() => handleBackendDownload('pdf')}>PDF</Button>
             </ButtonGroup>
-          </Box>
-        )}
+          )}
+        </Box>
 
         <TextField 
           multiline

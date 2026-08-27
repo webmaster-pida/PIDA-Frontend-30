@@ -52,8 +52,7 @@ export default function Sidebar({ currentView, setCurrentView, user }) {
   };
 
   const navItems = [
-    { id: 'investigador', label: 'Experto', icon: <SearchIcon />, fullLabel: 'Experto en DDHH' },
-    { id: 'deepresearch', label: 'Investigación', icon: <ManageSearchIcon />, fullLabel: 'Investigación Profunda' },
+    { id: 'investigador', label: 'Investigador', icon: <SearchIcon />, fullLabel: 'Investigador' },
     { id: 'analizador', label: 'Analizador', icon: <DescriptionIcon />, fullLabel: 'Analizador Docs' },
     { id: 'precalificador', label: 'Precalificar', icon: <GavelIcon />, fullLabel: 'Evaluador Legal' },
   ];
