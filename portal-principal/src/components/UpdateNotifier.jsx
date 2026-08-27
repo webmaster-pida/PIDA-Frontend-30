@@ -170,7 +170,7 @@ export default function UpdateNotifier() {
           background: '#f8fafc',
           padding: '12px',
           borderRadius: '0px 4px 4px 0px',
-          borderLeft: '4px solid var(--pida-accent, #003399)'
+          borderLeft: '4px solid var(--pida-accent, #e63946)'
         }}>
           <strong>💡 Sugerencia:</strong> Si estás trabajando en algo importante, puedes cerrar este mensaje 
           haciendo clic en la "X" y refrescar la página más tarde para no perder tu progreso actual.

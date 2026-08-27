@@ -70,7 +70,7 @@ const TermsUpdateModal = () => {
       if (user) {
         setUserId(user.uid);
         try {
-          const userDoc = await db.collection('customers').doc(user.uid).get();
+          const userDoc = await db.collection('users').doc(user.uid).get();
           if (userDoc.exists) {
             const userData = userDoc.data();
             if (userData.accepted_terms_version !== CURRENT_TERMS_VERSION) {
@@ -92,7 +92,7 @@ const TermsUpdateModal = () => {
   const handleAccept = async () => {
     setLoading(true);
     try {
-      await db.collection('customers').doc(userId).set({
+      await db.collection('users').doc(userId).set({
         accepted_terms_version: CURRENT_TERMS_VERSION,
         terms_accepted_at: db.app.internal_from_config ? db.app.firebase_.firestore.FieldValue.serverTimestamp() : new Date()
       }, { merge: true });
