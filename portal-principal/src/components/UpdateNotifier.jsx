@@ -169,7 +169,7 @@ export default function UpdateNotifier() {
           textAlign: 'left',
           background: '#f8fafc',
           padding: '12px',
-          borderRadius: '8px',
+          borderRadius: '0px 8px 8px 0px',
           borderLeft: '4px solid var(--pida-accent, #003399)'
         }}>
           <strong>💡 Sugerencia:</strong> Si estás trabajando en algo importante, puedes cerrar este mensaje 
