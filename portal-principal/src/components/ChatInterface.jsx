@@ -177,8 +177,13 @@ const MermaidChart = ({ chartCode, isTyping }) => {
 
     const renderDiagram = async () => {
       try {
-        const cleanCode = chartCode.trim();
+        let cleanCode = chartCode.trim();
         if (!cleanCode) return;
+
+        // Auto-corregir errores menores de sintaxis generados por el LLM antes de procesar
+        cleanCode = cleanCode
+          .replace(/--"/g, '--> ')
+          .replace(/--\s*"/g, '--> ');
 
         // Validar sintaxis antes de renderizar usando try/catch y await mermaid.parse
         await mermaid.parse(cleanCode);
