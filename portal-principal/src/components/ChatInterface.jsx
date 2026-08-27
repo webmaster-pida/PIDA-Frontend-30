@@ -262,6 +262,87 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
+const markdownComponents = {
+  a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
+  code: ({ node, inline, className, children, ...props }) => {
+    const match = /language-([\w-]+)/.exec(className || '');
+    
+    if (!inline && match && match[1] === 'mermaid') {
+      return <MermaidChart chartCode={String(children)} />;
+    }
+    
+    return (
+      <code 
+        className={className} 
+        style={{ 
+          backgroundColor: '#f1f5f9', 
+          padding: '2px 4px', 
+          borderRadius: '4px', 
+          fontSize: '0.9em',
+          whiteSpace: 'pre-wrap', 
+          wordBreak: 'break-all'
+        }} 
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  },
+  pre: ({ node, children, ...props }) => {
+    // Evita renderizar fondo gris o marcos de código para diagramas de Mermaid
+    const isMermaid = children && React.isValidElement(children) && children.props.className?.includes('language-mermaid');
+    if (isMermaid) {
+      return <>{children}</>;
+    }
+    return (
+      <pre style={{ 
+        whiteSpace: 'pre-wrap', 
+        wordBreak: 'break-all', 
+        overflowX: 'hidden', 
+        maxWidth: '100%', 
+        backgroundColor: '#f1f5f9', 
+        padding: '10px', 
+        borderRadius: '8px' 
+      }} {...props}>
+        {children}
+      </pre>
+    );
+  },
+  table: ({ node, ...props }) => (
+    <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
+      <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+        <Table size="small" sx={{ minWidth: 600 }} {...props} />
+      </TableContainer>
+    </div>
+  ),
+  thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: '#f1f5f9' }} {...props} />,
+  tbody: ({ node, ...props }) => <TableBody {...props} />,
+  tr: ({ node, ...props }) => <TableRow hover {...props} />,
+  th: ({ node, ...props }) => (
+    <TableCell 
+      sx={{ 
+        fontWeight: 'bold', 
+        color: 'var(--pida-primary)', 
+        borderBottom: '2px solid #cbd5e1',
+        whiteSpace: 'normal',
+        lineHeight: 1.3
+      }} 
+      {...props} 
+    />
+  ),
+  td: ({ node, ...props }) => (
+    <TableCell 
+      sx={{ 
+        borderColor: '#e2e8f0',
+        verticalAlign: 'top',
+        whiteSpace: 'normal',
+        wordBreak: 'break-word'
+      }} 
+      {...props} 
+    />
+  )
+};
+
 export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchModeProp = false }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -445,87 +526,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       }, 1200); 
     }
   }, [statusQueue, isProcessingStatus]);
-
-  const markdownComponents = {
-    a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
-    code: ({ node, inline, className, children, ...props }) => {
-      const match = /language-([\w-]+)/.exec(className || '');
-      
-      if (!inline && match && match[1] === 'mermaid') {
-        return <MermaidChart chartCode={String(children)} />;
-      }
-      
-      return (
-        <code 
-          className={className} 
-          style={{ 
-            backgroundColor: '#f1f5f9', 
-            padding: '2px 4px', 
-            borderRadius: '4px', 
-            fontSize: '0.9em',
-            whiteSpace: 'pre-wrap', 
-            wordBreak: 'break-all'
-          }} 
-          {...props}
-        >
-          {children}
-        </code>
-      );
-    },
-    pre: ({ node, children, ...props }) => {
-      // Evita renderizar fondo gris o marcos de código para diagramas de Mermaid
-      const isMermaid = children && React.isValidElement(children) && children.props.className?.includes('language-mermaid');
-      if (isMermaid) {
-        return <>{children}</>;
-      }
-      return (
-        <pre style={{ 
-          whiteSpace: 'pre-wrap', 
-          wordBreak: 'break-all', 
-          overflowX: 'hidden', 
-          maxWidth: '100%', 
-          backgroundColor: '#f1f5f9', 
-          padding: '10px', 
-          borderRadius: '8px' 
-        }} {...props}>
-          {children}
-        </pre>
-      );
-    },
-    table: ({ node, ...props }) => (
-      <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-        <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <Table size="small" sx={{ minWidth: 600 }} {...props} />
-        </TableContainer>
-      </div>
-    ),
-    thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: '#f1f5f9' }} {...props} />,
-    tbody: ({ node, ...props }) => <TableBody {...props} />,
-    tr: ({ node, ...props }) => <TableRow hover {...props} />,
-    th: ({ node, ...props }) => (
-      <TableCell 
-        sx={{ 
-          fontWeight: 'bold', 
-          color: 'var(--pida-primary)', 
-          borderBottom: '2px solid #cbd5e1',
-          whiteSpace: 'normal',
-          lineHeight: 1.3
-        }} 
-        {...props} 
-      />
-    ),
-    td: ({ node, ...props }) => (
-      <TableCell 
-        sx={{ 
-          borderColor: '#e2e8f0',
-          verticalAlign: 'top',
-          whiteSpace: 'normal',
-          wordBreak: 'break-word'
-        }} 
-        {...props} 
-      />
-    )
-  };
 
   useEffect(() => {
     if (resetSignal > 0) {
