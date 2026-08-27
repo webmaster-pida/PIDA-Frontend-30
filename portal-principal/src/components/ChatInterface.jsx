@@ -4,7 +4,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; 
 import { Exporter, getTimestampedName } from '../utils/exporter';
 
-import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, TextField, Button, ButtonGroup, Fab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, CircularProgress, Typography, Switch, FormControlLabel, ToggleButtonGroup, ToggleButton, Dialog, DialogContent, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import mermaid from 'mermaid';
 
 const API_CHAT = import.meta.env.VITE_API_CHAT;
@@ -168,6 +169,7 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState(false);
   const [isParsing, setIsParsing] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
   const containerId = useRef(`mermaid-container-${Math.random().toString(36).substring(2, 9)}`);
 
   useEffect(() => {
@@ -179,6 +181,9 @@ const MermaidChart = ({ chartCode, isTyping }) => {
       try {
         let cleanCode = chartCode.trim();
         if (!cleanCode) return;
+
+        // Forzar orientación vertical: reemplazar LR por TD
+        cleanCode = cleanCode.replace(/(graph|flowchart)\s+LR/gi, '$1 TD');
 
         // Auto-corregir errores menores de sintaxis generados por el LLM antes de procesar
         cleanCode = cleanCode
@@ -244,26 +249,132 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-      <style>{`
-        #${containerId.current} svg {
-          width: 100% !important;
-          max-width: 100% !important;
-          height: auto !important;
-        }
-      `}</style>
-      <div 
-        id={containerId.current}
-        style={{
+    <>
+      <Box
+        onClick={() => setOpenModal(true)}
+        sx={{
           width: '100%',
           maxWidth: '100%',
-          display: 'block',
-          margin: '15px 0',
-          textAlign: 'center'
+          overflowX: 'auto',
+          cursor: 'pointer',
+          position: 'relative',
+          border: '1px solid transparent',
+          borderRadius: '8px',
+          transition: 'all 0.2s',
+          '&:hover': {
+            borderColor: 'var(--pida-primary)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+            '& .zoom-overlay': {
+              opacity: 1,
+            }
+          }
         }}
-        dangerouslySetInnerHTML={{ __html: svgContent }}
-      />
-    </div>
+      >
+        <style>{`
+          #${containerId.current} svg {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+          }
+        `}</style>
+
+        <Box
+          className="zoom-overlay"
+          sx={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            bgcolor: 'rgba(15, 23, 42, 0.85)',
+            color: 'white',
+            py: '4px',
+            px: '8px',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            opacity: 0,
+            transition: 'opacity 0.2s',
+            pointerEvents: 'none',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          🔍 Haz clic para ampliar
+        </Box>
+
+        <div 
+          id={containerId.current}
+          style={{
+            width: '100%',
+            maxWidth: '100%',
+            display: 'block',
+            margin: '15px 0',
+            textAlign: 'center'
+          }}
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+        />
+      </Box>
+
+      <Dialog
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            p: 2,
+            position: 'relative',
+            overflow: 'hidden'
+          }
+        }}
+        sx={{ zIndex: 9999999 }}
+      >
+        <IconButton
+          onClick={() => setOpenModal(false)}
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            bgcolor: '#F1F5F9',
+            zIndex: 10,
+            '&:hover': { bgcolor: '#E2E8F0' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            overflow: 'auto',
+            maxHeight: '85vh',
+            p: 4,
+            mt: 4
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: '90vw',
+              maxHeight: '80vh',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              '& svg': {
+                width: '100% !important',
+                maxWidth: '100% !important',
+                height: 'auto !important',
+                maxHeight: '75vh !important'
+              }
+            }}
+            dangerouslySetInnerHTML={{ __html: svgContent }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
