@@ -177,6 +177,23 @@ export default function Dashboard({ user, onRequireSubscription }) {
   
   const [isOnboarding, setIsOnboarding] = useState(sessionStorage.getItem('pida_is_onboarding') === 'true');
 
+  // Estado del Modo Oscuro con persistencia en localStorage
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('pida_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('pida_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('pida_theme', 'light');
+    }
+  }, [darkMode]);
+
   const [chatHistory, setChatHistory] = useState([]);
   const [anaHistory, setAnaHistory] = useState([]);
   const [preHistory, setPreHistory] = useState([]);
@@ -372,9 +389,15 @@ export default function Dashboard({ user, onRequireSubscription }) {
   return (
     <Box id="pida-app-layout" sx={{ display: 'flex', bgcolor: 'var(--pida-bg-app)', height: '100vh', overflow: 'hidden' }}>
       <TermsUpdateModal />
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} user={user} />
+      <Sidebar 
+        currentView={currentView} 
+        setCurrentView={setCurrentView} 
+        user={user} 
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+      />
       <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <Box component="header" sx={{ height: 70, bgcolor: 'white', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', px: { xs: 2, md: 4 }, gap: 2, zIndex: 1100 }}>
+        <Box component="header" sx={{ height: 70, bgcolor: 'var(--pida-bg-white)', borderBottom: '1px solid var(--pida-border)', display: 'flex', alignItems: 'center', px: { xs: 2, md: 4 }, gap: 2, zIndex: 1100 }}>
           <Button 
             variant="contained" 
             startIcon={<AddIcon />} 
@@ -401,7 +424,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
                 startIcon={<HistoryIcon />} 
                 size="small" 
                 onClick={handleMenuOpen} 
-                sx={{ ...headerBtnSx, borderColor: '#E2E8F0', color: 'text.secondary' }}
+                sx={{ ...headerBtnSx, borderColor: 'var(--pida-border)', color: 'var(--pida-text-muted)' }}
               >
                 {!isMobile && 'Historial de consultas'} <ArrowDownIcon sx={{ ml: 'auto' }} />
               </Button>

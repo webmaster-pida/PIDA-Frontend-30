@@ -29,9 +29,14 @@ import {
   MoreHoriz as MoreIcon,
   ManageSearch as ManageSearchIcon
 } from '@mui/icons-material';
+import { 
+  DarkMode as DarkModeIcon, 
+  LightMode as LightModeIcon 
+} from '@mui/icons-material';
 import { auth } from '../config/firebase';
+import { Switch } from '@mui/material';
 
-export default function Sidebar({ currentView, setCurrentView, user }) {
+export default function Sidebar({ currentView, setCurrentView, user, darkMode, setDarkMode }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -122,6 +127,12 @@ export default function Sidebar({ currentView, setCurrentView, user }) {
             <ListItemIcon><AccountIcon fontSize="small" /></ListItemIcon>
             Mi Cuenta
           </MenuItem>
+          <MenuItem onClick={() => { setDarkMode(!darkMode); handleMenuClose(); }}>
+            <ListItemIcon>
+              {darkMode ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+            </ListItemIcon>
+            {darkMode ? 'Modo Claro' : 'Modo Oscuro'}
+          </MenuItem>
           <Divider />
           <MenuItem onClick={doLogout} sx={{ color: 'error.main' }}>
             <ListItemIcon><LogoutIcon fontSize="small" color="error" /></ListItemIcon>
@@ -155,6 +166,18 @@ export default function Sidebar({ currentView, setCurrentView, user }) {
             alignItems: 'center', 
             textAlign: 'center',
         }}>
+            {/* Selector de Modo Oscuro para Escritorio */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, color: 'rgba(255,255,255,0.8)' }}>
+              <LightModeIcon fontSize="small" />
+              <Switch 
+                checked={darkMode} 
+                onChange={(e) => setDarkMode(e.target.checked)}
+                color="default" 
+                size="small"
+              />
+              <DarkModeIcon fontSize="small" />
+            </Box>
+
             <Avatar 
                 src={user?.photoURL}
                 sx={{ width: 56, height: 56, mb: 1.5, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.3)' }} 

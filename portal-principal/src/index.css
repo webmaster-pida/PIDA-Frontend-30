@@ -39,6 +39,115 @@
     --green: #4caf50;
 }
 
+/* =========================================
+   MODO OSCURO - PALETA DE COLORES ADAPTADA
+   ========================================= */
+:root.dark-mode {
+    --navy: #60a5fa; 
+    --navy-dark: #0b0f19;
+    --text: #e2e8f0;
+    --white: #161b22; 
+    --gray-subtle: #0d1117; 
+    --border-light: #30363d;
+    --pida-primary: #60a5fa; 
+    --pida-accent: #3b82f6; 
+    --pida-bg-app: #0b0f19;
+    --pida-bg-white: #161b22; 
+    --pida-text-main: #e2e8f0; 
+    --pida-text-muted: #94a3b8;
+    --pida-border: #30363d;
+}
+
+/* Ajustes específicos de Modo Oscuro */
+:root.dark-mode body {
+    background-color: var(--pida-bg-app);
+    color: var(--pida-text-main);
+}
+
+:root.dark-mode .pida-message-bubble {
+    background-color: var(--pida-bg-white);
+    color: var(--pida-text-main);
+    border-color: var(--pida-border);
+}
+
+:root.dark-mode .pida-bubble table {
+    background-color: var(--pida-bg-white);
+    border-color: var(--pida-border);
+}
+:root.dark-mode .pida-bubble th {
+    background-color: var(--pida-bg-app);
+    border-bottom-color: var(--pida-border);
+    color: var(--pida-primary);
+}
+:root.dark-mode .pida-bubble td {
+    border-bottom-color: var(--pida-border);
+}
+:root.dark-mode .pida-bubble tr:nth-child(even) {
+    background-color: rgba(255,255,255,0.02);
+}
+
+:root.dark-mode .MuiOutlinedInput-root {
+    background-color: var(--pida-bg-white) !important;
+    color: var(--pida-text-main) !important;
+}
+:root.dark-mode .MuiOutlinedInput-notchedOutline {
+    border-color: var(--pida-border) !important;
+}
+:root.dark-mode .MuiInputLabel-root {
+    color: var(--pida-text-muted) !important;
+}
+:root.dark-mode .MuiInputBase-input {
+    color: var(--pida-text-main) !important;
+}
+
+:root.dark-mode .MuiToggleButtonGroup-root {
+    background-color: var(--pida-bg-white) !important;
+}
+:root.dark-mode .MuiToggleButton-root {
+    color: var(--pida-text-muted) !important;
+}
+:root.dark-mode .MuiToggleButton-root.Mui-selected {
+    background-color: var(--pida-bg-app) !important;
+    color: var(--pida-primary) !important;
+}
+
+:root.dark-mode .MuiButtonGroup-root {
+    background-color: var(--pida-bg-white) !important;
+    border-color: var(--pida-border) !important;
+}
+:root.dark-mode .MuiButtonGroup-root .MuiButton-root {
+    color: var(--pida-text-main) !important;
+    border-color: var(--pida-border) !important;
+}
+
+:root.dark-mode .MuiPaper-root {
+    background-color: var(--pida-bg-white) !important;
+    color: var(--pida-text-main) !important;
+    border-color: var(--pida-border) !important;
+}
+:root.dark-mode .MuiDialog-container .MuiPaper-root {
+    background-color: var(--pida-bg-white) !important;
+}
+
+:root.dark-mode .MuiDivider-root {
+    border-color: var(--pida-border) !important;
+}
+
+:root.dark-mode .follow-up-btn {
+    background-color: var(--pida-bg-white);
+    border-color: var(--pida-border);
+    color: var(--pida-primary);
+}
+:root.dark-mode .follow-up-btn:hover {
+    background-color: var(--pida-bg-app);
+    border-color: var(--pida-primary);
+    color: var(--pida-primary);
+}
+
+:root.dark-mode .pida-welcome-text p {
+    color: var(--pida-text-main);
+}
+
 img { max-width: 100%; height: auto; display: block; }
 .hero-content img { margin: 0 auto 15px auto; display: block; }
 
@@ -767,4 +876,3 @@ textarea.form-input { resize: vertical; }
     z-index: 1;
 }
 .inline-spinner { display: inline-block; width: 1em; height: 1em; border: 2px solid rgba(29, 53, 87, 0.2); border-radius: 50%; border-top-color: var(--pida-accent, #0056b3); animation: spin 1s linear infinite; vertical-align: middle; margin-left: 8px; }
-
