@@ -442,6 +442,59 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
+const TypedStatusLine = ({ status, isLast }) => {
+  const isSubItem = status.startsWith('-') || status.startsWith('•') || status.startsWith('  ');
+  const text = status.replace(/^[\s\-•]+/, '');
+  const [displayedText, setDisplayedText] = useState(isLast ? '' : text);
+
+  useEffect(() => {
+    if (!isLast) {
+      setDisplayedText(text);
+      return;
+    }
+
+    let isMounted = true;
+    let currentIndex = 0;
+    setDisplayedText('');
+
+    const interval = setInterval(() => {
+      if (currentIndex < text.length) {
+        currentIndex++;
+        if (isMounted) {
+          setDisplayedText(text.slice(0, currentIndex));
+        }
+      } else {
+        clearInterval(interval);
+      }
+    }, 15);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [text, isLast]);
+
+  return (
+    <Typography 
+      variant="body2" 
+      sx={{ 
+        fontSize: '0.85rem', 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        color: !isSubItem ? 'var(--pida-primary)' : 'text.secondary',
+        fontWeight: !isSubItem ? 'bold' : 'normal', 
+        gap: 1, 
+        ml: isSubItem ? 3 : 0,
+        transition: 'all 0.3s ease-in-out'
+      }}
+    >
+      {!isSubItem && <span style={{ color: 'var(--pida-primary)', marginTop: '2px' }}>✓</span>}
+      {isSubItem && <span style={{ color: '#94a3b8', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
+      <span style={{ pt: '1px' }}>{displayedText}</span>
+    </Typography>
+  );
+};
+
 const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
   const [isOpen, setIsOpen] = useState(true);
   const lines = content.split('\n').filter(line => line.trim() !== '');
@@ -923,6 +976,15 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                   if (isResearchMode) {
                     setResearchStatuses(prev => {
                       if (prev.includes(data.message)) return prev;
+                      if (prev.length > 0) {
+                        const lastItem = prev[prev.length - 1];
+                        if (data.message.startsWith(lastItem)) {
+                          return [...prev.slice(0, -1), data.message];
+                        }
+                        if (lastItem.startsWith(data.message)) {
+                          return prev;
+                        }
+                      }
                       return [...prev, data.message];
                     });
                   } else {
@@ -1183,16 +1245,16 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           ))}
 
           {isTyping && (messages.length === 0 || messages[messages.length - 1].role === 'user' || messages[messages.length - 1].content === '') && (
-            <div className="pida-bubble pida-message-bubble">
+            <div className="pida-bubble pida-message-bubble" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <Box sx={{ 
-                width: isResearchMode ? '500px' : '400px', 
-                maxWidth: '100%', 
+                width: '100%', 
                 display: 'flex', 
                 flexDirection: 'column',
                 gap: isResearchMode ? 1.5 : 0,
                 py: 1.5, 
                 px: 2,
-                color: '#475569' 
+                color: '#475569',
+                boxSizing: 'border-box'
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <CircularProgress size={20} sx={{ color: 'var(--pida-primary)' }} />
@@ -1211,30 +1273,13 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                     ml: 1.2,
                     mt: 0.5
                   }}>
-                    {researchStatuses.map((status, i) => {
-                      const isSubItem = status.startsWith('-') || status.startsWith('•') || status.startsWith('  ');
-                      const text = status.replace(/^[\s\-•]+/, '');
-                      const isLast = i === researchStatuses.length - 1;
-                      return (
-                        <Typography 
-                          key={i} 
-                          variant="body2" 
-                          sx={{ 
-                            fontSize: '0.85rem', 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
-                            color: isLast && !isSubItem ? 'var(--pida-primary)' : 'text.secondary',
-                            fontWeight: isLast ? 600 : 400, 
-                            gap: 1, 
-                            ml: isSubItem ? 3 : 0 
-                          }}
-                        >
-                          {!isSubItem && <span style={{ color: 'var(--pida-primary)', marginTop: '2px' }}>✓</span>}
-                          {isSubItem && <span style={{ color: '#94a3b8', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
-                          <span style={{ pt: '1px' }}>{text}</span>
-                        </Typography>
-                      );
-                    })}
+                    {researchStatuses.map((status, i) => (
+                      <TypedStatusLine 
+                        key={i} 
+                        status={status} 
+                        isLast={i === researchStatuses.length - 1} 
+                      />
+                    ))}
                   </Box>
                 )}
               </Box>
