@@ -126,18 +126,21 @@ export default function UpdateNotifier() {
         </button>
         
         <div style={{
-          width: '60px',
-          height: '60px',
+          width: '75px',
+          height: '75px',
           borderRadius: '50%',
           background: 'rgba(0, 195, 255, 0.1)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           margin: '0 auto 20px',
-          color: 'var(--pida-accent, #003399)',
-          fontSize: '28px'
+          overflow: 'hidden'
         }}>
-          ✨
+          <img 
+            src="/img/PIDA-MASCOTA-Trans-menu-peq.png" 
+            alt="Mascota PIDA" 
+            style={{ width: '80%', height: '80%', objectFit: 'contain' }} 
+          />
         </div>
 
         <h2 style={{

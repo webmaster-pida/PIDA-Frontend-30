@@ -442,26 +442,28 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
-const CollapsibleResearchDetails = ({ content }) => {
+const MinimizableStatusLog = ({ content }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const lines = content.split('\n').filter(line => line.trim() !== '');
+
   return (
-    <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', mb: 2, mt: 1, overflow: 'hidden' }}>
-      <Box 
-        onClick={() => setIsOpen(!isOpen)}
-        sx={{ bgcolor: '#f8fafc', p: 1.5, display: 'flex', justifyContent: 'space-between', cursor: 'pointer', alignItems: 'center' }}
-      >
-        <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--pida-primary)', fontWeight: 600 }}>
-          🔍 Fuentes Consultadas
-        </Typography>
-        <Button size="small" sx={{ color: 'text.secondary', minWidth: 0, p: 0, textTransform: 'none' }}>
-          {isOpen ? 'Minimizar' : 'Expandir'}
+    <Box sx={{ mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+        <Button 
+          onClick={() => setIsOpen(!isOpen)} 
+          size="small" 
+          sx={{ color: 'text.secondary', textTransform: 'none', minWidth: 0, p: 0 }}
+        >
+          {isOpen ? 'Ocultar progreso' : 'Ver progreso'}
         </Button>
       </Box>
       {isOpen && (
-        <Box sx={{ bgcolor: '#ffffff', p: 2, fontSize: '0.85rem' }}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-            {content}
-          </ReactMarkdown>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, pl: 1.5, ml: 1.2, borderLeft: '2px solid #e2e8f0' }}>
+          {lines.map((line, i) => (
+            <Typography key={i} variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <span style={{ color: 'var(--pida-primary)' }}>✓</span> {line}
+            </Typography>
+          ))}
         </Box>
       )}
     </Box>
@@ -1023,15 +1025,13 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
 
-    let researchDetailsContent = null;
-    // Regex que captura incluso si la etiqueta de cierre aún no ha llegado por el streaming
-    const detailsRegex = /<pida_research_details>([\s\S]*?)(?:<\/pida_research_details>|$)/;
-    const matchDetails = displayContent.match(detailsRegex);
+    let statusLogContent = null;
+    const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/;
+    const matchLog = displayContent.match(logRegex);
     
-    if (matchDetails) {
-      researchDetailsContent = matchDetails[1].trim();
-      // Quitamos la etiqueta y su contenido del texto principal para que no se duplique
-      displayContent = displayContent.replace(detailsRegex, ""); 
+    if (matchLog) {
+      statusLogContent = matchLog[1].trim();
+      displayContent = displayContent.replace(logRegex, ""); 
     }
 
         // Procesamos las líneas para corregir negritas incompletas, pero manteniendo intactos los bloques de Mermaid
@@ -1109,8 +1109,8 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     return (
       <>
-        {researchDetailsContent && (
-          <CollapsibleResearchDetails content={researchDetailsContent}/>
+        {statusLogContent && (
+          <MinimizableStatusLog content={statusLogContent}/>
         )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>
