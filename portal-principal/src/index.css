@@ -43,14 +43,14 @@
    MODO OSCURO - PALETA DE COLORES ADAPTADA
    ========================================= */
 :root.dark-mode {
-    --navy: #60a5fa; 
+    --navy: #101852; 
     --navy-dark: #0b0f19;
     --text: #e2e8f0;
     --white: #161b22; 
     --gray-subtle: #0d1117; 
     --border-light: #30363d;
-    --pida-primary: #60a5fa; 
-    --pida-accent: #3b82f6; 
+    --pida-primary: #101852; 
+    --pida-accent: #003399; 
     --pida-bg-app: #0b0f19;
     --pida-bg-white: #161b22; 
     --pida-text-main: #e2e8f0; 
@@ -62,6 +62,17 @@
 :root.dark-mode body {
     background-color: var(--pida-bg-app);
     color: var(--pida-text-main);
+}
+
+/* Títulos y textos destacados legibles en modo oscuro */
+:root.dark-mode .pida-bubble h1,
+:root.dark-mode .pida-bubble h2,
+:root.dark-mode .pida-bubble h3,
+:root.dark-mode .pida-bubble h4,
+:root.dark-mode .pida-bubble strong,
+:root.dark-mode .pida-welcome-text h3,
+:root.dark-mode .pida-welcome-text strong {
+    color: #60a5fa !important;
 }
 
 :root.dark-mode .pida-message-bubble {
@@ -87,7 +98,7 @@
 }
 
 :root.dark-mode .MuiOutlinedInput-root {
-    background-color: var(--pida-bg-white) !important;
+    background-color: var(--gray-subtle) !important;
     color: var(--pida-text-main) !important;
 }
 :root.dark-mode .MuiOutlinedInput-notchedOutline {
@@ -108,7 +119,7 @@
 }
 :root.dark-mode .MuiToggleButton-root.Mui-selected {
     background-color: var(--pida-bg-app) !important;
-    color: var(--pida-primary) !important;
+    color: #60a5fa !important;
 }
 
 :root.dark-mode .MuiButtonGroup-root {
@@ -136,12 +147,12 @@
 :root.dark-mode .follow-up-btn {
     background-color: var(--pida-bg-white);
     border-color: var(--pida-border);
-    color: var(--pida-primary);
+    color: #60a5fa;
 }
 :root.dark-mode .follow-up-btn:hover {
     background-color: var(--pida-bg-app);
-    border-color: var(--pida-primary);
-    color: var(--pida-primary);
+    border-color: #3b82f6;
+    color: #3b82f6;
 }
 
 :root.dark-mode .pida-welcome-text p {
@@ -658,7 +669,7 @@ input:checked + .slider:before { transform: translateX(24px); }
 html, body { min-height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
 #pida-app-layout { height: 100dvh; height: 100svh; display: flex; flex-direction: row; overflow: hidden !important; }
 .pida-view-content { flex: 1 1 auto; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
-.pida-view-form { flex: 0 0 auto; background: white; z-index: 10; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pida-view-form { flex: 0 0 auto; background: var(--pida-bg-white); z-index: 10; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
 
 .nav-login-btn {
 background: transparent;
