@@ -444,7 +444,7 @@ const MermaidChart = ({ chartCode, isTyping }) => {
 
 const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const lines = content.split('\n').filter(line => line.trim() !== '');
+  const lines = (content || '').split('\n').filter(line => line.trim() !== '');
 
   return (
     <Box sx={{ width: '100%', mt: 1, mb: 2 }}>
@@ -1206,7 +1206,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           {isTyping && (messages.length === 0 || messages[messages.length - 1].role === 'user' || messages[messages.length - 1].content === '') && (
             <div className="pida-bubble pida-message-bubble" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <MinimizableStatusLog 
-                content={isResearchMode ? researchStatuses.join('\n') : currentStatus} 
+                content={researchStatuses.join('\n')} 
                 isTyping={true} 
                 hasContent={false} 
               />
