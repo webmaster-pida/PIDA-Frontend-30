@@ -481,12 +481,12 @@ export default function Dashboard({ user, onRequireSubscription }) {
                 setIsSupportOpen(true);
               }}
               sx={{ 
-                color: 'var(--pida-primary)', 
+                color: 'var(--pida-interactive)', 
                 fontWeight: 700, 
                 textTransform: 'none',
                 px: 2,
                 '&:hover': { 
-                  backgroundColor: 'rgba(29, 53, 87, 0.08)',
+                  backgroundColor: 'var(--pida-hover-bg)',
                   textDecoration: 'none' 
                 }
               }}

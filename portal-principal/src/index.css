@@ -37,6 +37,8 @@
     --pida-bg-white: #FFFFFF; --pida-text-main: #555555; --pida-text-muted: #6B7280;
     --pida-border: #E5E7EB; --pida-font: 'Inter', sans-serif;
     --green: #4caf50;
+    --pida-interactive: #101852;
+    --pida-hover-bg: rgba(29, 53, 87, 0.08);
 }
 
 /* =========================================
@@ -56,6 +58,8 @@
     --pida-text-main: #e2e8f0; 
     --pida-text-muted: #94a3b8;
     --pida-border: #30363d;
+    --pida-interactive: #60a5fa;
+    --pida-hover-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* Ajustes específicos de Modo Oscuro */
