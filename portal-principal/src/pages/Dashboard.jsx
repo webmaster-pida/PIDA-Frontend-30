@@ -519,16 +519,24 @@ export default function Dashboard({ user, onRequireSubscription }) {
           disableAutoFocus: true,
         }}
         PaperProps={{
-          sx: { width: { xs: '100%', sm: 400 }, padding: '30px', display: 'flex', flexDirection: 'column', gap: 3 }
+          sx: { 
+            width: { xs: '100%', sm: 400 }, 
+            padding: '30px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 3,
+            bgcolor: 'var(--pida-bg-white)',
+            color: 'var(--pida-text-main)'
+          }
         }}
       >
         {/* --- NUEVO ENCABEZADO CON BOTÓN DE CERRAR --- */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box pr={2}>
-            <Typography variant="h5" sx={{ color: 'var(--pida-primary)', fontWeight: 800, mb: 1 }}>
+            <Typography variant="h5" sx={{ color: 'var(--pida-interactive)', fontWeight: 800, mb: 1 }}>
               Soporte Técnico PIDA
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.5 }}>
+            <Typography variant="body2" sx={{ color: 'var(--pida-text-muted)', lineHeight: 1.5 }}>
               Déjanos tu duda o reporte. Nuestro equipo te responderá vía correo electrónico en un plazo de 24 a 48 horas.
             </Typography>
           </Box>
@@ -537,7 +545,11 @@ export default function Dashboard({ user, onRequireSubscription }) {
               setIsSupportOpen(false);
               setSupportStatus({ type: '', text: '' });
             }}
-            sx={{ bgcolor: '#F1F5F9', '&:hover': { bgcolor: '#E2E8F0' } }}
+            sx={{ 
+              bgcolor: 'var(--pida-bg-app)', 
+              color: 'var(--pida-text-main)', 
+              '&:hover': { bgcolor: 'var(--pida-border)' } 
+            }}
           >
             <CloseIcon />
           </IconButton>
