@@ -47,7 +47,9 @@ import {
   Stars as VipIcon,
   Close as CloseIcon,
   ChatBubbleOutline as ChatIcon,
-  SavedSearch as ResearchIcon
+  SavedSearch as ResearchIcon,
+  Description as DescriptionIcon,
+  FactCheck as FactCheckIcon
 } from '@mui/icons-material';
 
 import { loadStripe } from '@stripe/stripe-js';
@@ -456,13 +458,17 @@ export default function Dashboard({ user, onRequireSubscription }) {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 1, maxWidth: '380px', overflow: 'hidden' }}>
-                      {currentView === 'investigador' && (
-                        item.conversation_type === 'deep_research' ? (
-                          <ResearchIcon sx={{ fontSize: 18, color: 'inherit' }} />
-                        ) : (
-                          <ChatIcon sx={{ fontSize: 18, color: 'inherit' }} />
-                        )
-                      )}
+                            {currentView === 'investigador' ? (
+                              item.conversation_type === 'deep_research' ? (
+                                <ResearchIcon sx={{ fontSize: 18, color: 'inherit' }} />
+                              ) : (
+                                <ChatIcon sx={{ fontSize: 18, color: 'inherit' }} />
+                              )
+                            ) : currentView === 'analizador' ? (
+                              <DescriptionIcon sx={{ fontSize: 18, color: 'inherit' }} />
+                            ) : (
+                              <FactCheckIcon sx={{ fontSize: 18, color: 'inherit' }} />
+                            )}
                       <Typography variant="body2" noWrap sx={{ flexGrow: 1 }}>
                         {item.title ? (item.title.length > 60 ? item.title.substring(0, 60) + '...' : item.title) : "Sin título"}
                       </Typography>
