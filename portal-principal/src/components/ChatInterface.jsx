@@ -442,6 +442,32 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
+const CollapsibleResearchDetails = ({ content }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', mb: 2, mt: 1, overflow: 'hidden' }}>
+      <Box 
+        onClick={() => setIsOpen(!isOpen)}
+        sx={{ bgcolor: '#f8fafc', p: 1.5, display: 'flex', justifyContent: 'space-between', cursor: 'pointer', alignItems: 'center' }}
+      >
+        <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--pida-primary)', fontWeight: 600 }}>
+          🔍 Fuentes Consultadas
+        </Typography>
+        <Button size="small" sx={{ color: 'text.secondary', minWidth: 0, p: 0, textTransform: 'none' }}>
+          {isOpen ? 'Minimizar' : 'Expandir'}
+        </Button>
+      </Box>
+      {isOpen && (
+        <Box sx={{ bgcolor: '#ffffff', p: 2, fontSize: '0.85rem' }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            {content}
+          </ReactMarkdown>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 const markdownComponents = {
   a: ({ node, ...props }) => <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>,
   code: ({ node, inline, className, children, ...props }) => {
@@ -997,6 +1023,17 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
 
+    let researchDetailsContent = null;
+    // Regex que captura incluso si la etiqueta de cierre aún no ha llegado por el streaming
+    const detailsRegex = /<pida_research_details>([\s\S]*?)(?:<\/pida_research_details>|$)/;
+    const matchDetails = displayContent.match(detailsRegex);
+    
+    if (matchDetails) {
+      researchDetailsContent = matchDetails[1].trim();
+      // Quitamos la etiqueta y su contenido del texto principal para que no se duplique
+      displayContent = displayContent.replace(detailsRegex, ""); 
+    }
+
         // Procesamos las líneas para corregir negritas incompletas, pero manteniendo intactos los bloques de Mermaid
         const segments = [];
         let currentIndex = 0;
@@ -1072,6 +1109,9 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     return (
       <>
+        {researchDetailsContent && (
+          <CollapsibleResearchDetails content={researchDetailsContent}/>
+        )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>
             {formatMarkdown(displayContent)}
