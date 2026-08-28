@@ -530,6 +530,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
+  const [researchStatuses, setResearchStatuses] = useState([]);
 
   // Interceptador dinámico de componentes Markdown para inyectar 'isTyping' a MermaidChart
   const customMarkdownComponents = React.useMemo(() => ({
@@ -715,6 +716,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       setIsAtBottom(true);
       setStatusQueue([]);
       setIsProcessingStatus(false);
+      setResearchStatuses([]);
     }
   }, [resetSignal]);
 
@@ -766,6 +768,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     setIsTyping(true);
     setCurrentStatus('Conectando...');
     setStatusQueue([]); 
+    setResearchStatuses([]);
     
     setIsAtBottom(true);
     setTimeout(() => scrollToBottom(), 50);
@@ -877,7 +880,14 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                 const data = JSON.parse(line.substring(6));
                 
                 if (data.event === 'status' && data.message) {
-                  setStatusQueue(prev => [...prev, data.message]);
+                  if (isResearchMode) {
+                    setResearchStatuses(prev => {
+                      if (prev.includes(data.message)) return prev;
+                      return [...prev, data.message];
+                    });
+                  } else {
+                    setStatusQueue(prev => [...prev, data.message]);
+                  }
                 } 
                 else if (data.text) {
                   // Guardamos en la cola en lugar de frenar la red
@@ -1119,19 +1129,50 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           {isTyping && (messages.length === 0 || messages[messages.length - 1].role === 'user' || messages[messages.length - 1].content === '') && (
             <div className="pida-bubble pida-message-bubble">
               <Box sx={{ 
-                width: '400px', 
+                width: isResearchMode ? '500px' : '400px', 
                 maxWidth: '100%', 
                 display: 'flex', 
-                alignItems: 'center', 
-                gap: 2, 
-                py: 1, 
+                flexDirection: 'column',
+                gap: isResearchMode ? 1.5 : 0,
+                py: 1.5, 
                 px: 2,
                 color: '#475569' 
               }}>
-                <CircularProgress size={20} sx={{ color: 'var(--pida-primary)' }} />
-                <Typography variant="body2" sx={{ fontWeight: 500, fontStyle: 'italic' }}>
-                  {currentStatus}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress size={20} sx={{ color: 'var(--pida-primary)' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontStyle: isResearchMode ? 'normal' : 'italic' }}>
+                    {isResearchMode ? 'Ejecutando Investigación Profunda...' : currentStatus}
+                  </Typography>
+                </Box>
+                
+                {isResearchMode && researchStatuses.length > 0 && (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 0.8, 
+                    pl: 4.5,
+                    borderLeft: '2px solid #e2e8f0',
+                    ml: 1.2,
+                    mt: 0.5
+                  }}>
+                    {researchStatuses.map((status, i) => (
+                      <Typography 
+                        key={i} 
+                        variant="body2" 
+                        sx={{ 
+                          fontSize: '0.85rem', 
+                          color: i === researchStatuses.length - 1 ? 'var(--pida-primary)' : 'text.secondary',
+                          fontWeight: i === researchStatuses.length - 1 ? 600 : 400,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <span style={{ color: 'var(--pida-primary)' }}>✓</span> {status}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
               </Box>
             </div>
           )}
@@ -1182,6 +1223,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                   setChatId(null);
                   setInput('');
                   setQuestionQueue([]);
+                  setResearchStatuses([]);
                   setIsAtBottom(true);
                 }
               }
