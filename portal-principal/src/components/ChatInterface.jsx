@@ -786,7 +786,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           await fetch(`${API_CHAT}/conversations/${currentChatId}/title`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: textToSend.substring(0, 40) })
+            body: JSON.stringify({ title: textToSend })
           });
           if (refreshHistory) refreshHistory();
         } catch (err) {

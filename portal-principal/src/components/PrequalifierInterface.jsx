@@ -151,7 +151,7 @@ const PreviewLink = ({ href, children, node, title, ...props }) => {
   );
 };
 
-export default function PrequalifierInterface({ user, resetSignal, loadPreData }) {
+export default function PrequalifierInterface({ user, resetSignal, loadPreId }) {
   const [title, setTitle] = useState('');
   const [country, setCountry] = useState('');
   const [facts, setFacts] = useState('');
@@ -204,16 +204,36 @@ export default function PrequalifierInterface({ user, resetSignal, loadPreData }
   }, [resetSignal]);
 
   useEffect(() => {
-    if (loadPreData) {
-      setTitle(loadPreData.title || '');
-      setCountry(loadPreData.country_code || '');
-      setFacts(loadPreData.facts || '');
-      setResultText(loadPreData.analysis || '');
-      setError('');
-      setIsAtBottom(true);
-      setTimeout(() => scrollToBottom('auto'), 100);
+    if (loadPreId) {
+      const loadPastPre = async () => {
+        setIsAnalyzing(true);
+        setStatusMsg('Cargando historial...');
+        setError('');
+        setResultText('');
+        setIsAtBottom(true);
+        
+        try {
+          const token = await user.getIdToken();
+          const res = await fetch(`${API_PRE}/prequalifications/${loadPreId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error("Error del servidor al cargar el historial.");
+          
+          const data = await res.json();
+          setTitle(data.title || '');
+          setCountry(data.country_code || '');
+          setFacts(data.facts || '');
+          setResultText(data.analysis || '');
+          setTimeout(() => scrollToBottom('auto'), 100);
+        } catch (err) {
+          setError('❌ No se pudo cargar el historial del caso.');
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      loadPastPre();
     }
-  }, [loadPreData]);
+  }, [loadPreId, user]);
 
   const handleAnalyze = async () => {
     const trimmedFacts = facts.trim();

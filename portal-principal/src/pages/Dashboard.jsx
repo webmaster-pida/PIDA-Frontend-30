@@ -59,6 +59,7 @@ import {
 const stripePromise = loadStripe('pk_live_51QriCdGgaloBN5L8XyzW4M1QePJK316USJg3kjrZGFGln3bhwEQKnpoNXf2MnLXGHylM1OQ6SvWJmNVCNqhCxg6x000l605E1B');
 
 const CURRENT_TERMS_VERSION = "2025-12-09";
+const API_PRE = import.meta.env.VITE_API_PRE;
 
 const TermsUpdateModal = () => {
   const [open, setOpen] = useState(false);
@@ -266,8 +267,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
       };
       setChatHistory(await fetchRes(`${PIDA_CONFIG.API_CHAT}/conversations`));
       setAnaHistory(await fetchRes(`${PIDA_CONFIG.API_ANA}/analysis-history/`));
-      const snap = await db.collection('users').doc(user.uid).collection('prequalifications').orderBy('created_at', 'desc').limit(20).get();
-      setPreHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setPreHistory(await fetchRes(`${API_PRE}/prequalifications`));
     } catch (err) {
       if (err.message === '403') {
         if (onRequireSubscription) onRequireSubscription();
@@ -287,12 +287,10 @@ export default function Dashboard({ user, onRequireSubscription }) {
   const deleteItem = async (type, id, e) => {
     e.stopPropagation(); 
     const token = await user.getIdToken();
-    const baseUrl = type === 'chat' ? PIDA_CONFIG.API_CHAT + '/conversations' : PIDA_CONFIG.API_ANA + '/analysis-history';
-    if (type === 'pre') { 
-      await db.collection('users').doc(user.uid).collection('prequalifications').doc(id).delete(); 
-    } else { 
-      await fetch(`${baseUrl}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }}); 
-    }
+    const baseUrl = type === 'chat' ? PIDA_CONFIG.API_CHAT + '/conversations' : 
+                    type === 'analizador' ? PIDA_CONFIG.API_ANA + '/analysis-history' : 
+                    `${API_PRE}/prequalifications`;
+    await fetch(`${baseUrl}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }}); 
     fetchHistories();
   };
 
@@ -412,7 +410,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
                 open={openMenu} 
                 onClose={handleMenuClose} 
                 sx={{ zIndex: 200000 }} 
-                PaperProps={{ sx: { width: 320, maxHeight: 450, borderRadius: 3, mt: 1, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' } }}
+                PaperProps={{ sx: { width: 500, maxHeight: 450, borderRadius: 3, mt: 1, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' } }}
               >
                 <Typography variant="overline" sx={{ px: 2, py: 1, display: 'block', fontWeight: 800, color: 'text.disabled' }}>
                   Registros Recientes
@@ -428,12 +426,12 @@ export default function Dashboard({ user, onRequireSubscription }) {
                     onClick={() => { 
                       if (currentView === 'investigador') setLoadData(p => ({...p, investigador: item.id})); 
                       else if (currentView === 'analizador') setLoadData(p => ({...p, ana: item.id})); 
-                      else setLoadData(p => ({...p, pre: item})); 
+                      else setLoadData(p => ({...p, pre: item.id})); 
                       handleMenuClose(); 
                     }}
                   >
-                    <Typography variant="body2" noWrap sx={{ flexGrow: 1, maxWidth: '240px' }}>
-                      {item.title || "Sin título"}
+                    <Typography variant="body2" noWrap sx={{ flexGrow: 1, maxWidth: '380px' }}>
+                      {item.title ? (item.title.length > 60 ? item.title.substring(0, 60) + '...' : item.title) : "Sin título"}
                     </Typography>
                     <IconButton size="small" color="error" onClick={(e) => deleteItem(currentView === 'investigador' ? 'chat' : currentView === 'analizador' ? 'ana' : 'pre', item.id, e)}> 
                       <DeleteIcon fontSize="small" /> 
@@ -479,7 +477,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
         <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
           {currentView === 'investigador' && <ChatInterface key="chat-investigador" user={user} resetSignal={resetSignals.investigador} loadChatId={loadData.investigador} refreshHistory={fetchHistories} />}
           {currentView === 'analizador' && <AnalyzerInterface user={user} resetSignal={resetSignals.ana} loadAnaId={loadData.ana} />}
-          {currentView === 'precalificador' && <PrequalifierInterface user={user} resetSignal={resetSignals.pre} loadPreData={loadData.pre} />}
+          {currentView === 'precalificador' && <PrequalifierInterface user={user} resetSignal={resetSignals.pre} loadPreId={loadData.pre} />}
           {currentView === 'cuenta' && <AccountInterface user={user} isVip={isVip} />}
         </Box>
       </Box>
