@@ -442,28 +442,40 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
-const MinimizableStatusLog = ({ content }) => {
+const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
   const [isOpen, setIsOpen] = useState(true);
   const lines = content.split('\n').filter(line => line.trim() !== '');
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-        <Button 
-          onClick={() => setIsOpen(!isOpen)} 
-          size="small" 
-          sx={{ color: 'text.secondary', textTransform: 'none', minWidth: 0, p: 0 }}
-        >
+    <Box sx={{ width: '100%', mt: 1, mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+        <Button onClick={() => setIsOpen(!isOpen)} size="small" sx={{ color: 'text.secondary', textTransform: 'none', minWidth: 0, p: 0 }}>
           {isOpen ? 'Ocultar progreso' : 'Ver progreso'}
         </Button>
       </Box>
       {isOpen && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, pl: 1.5, ml: 1.2, borderLeft: '2px solid #e2e8f0' }}>
-          {lines.map((line, i) => (
-            <Typography key={i} variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <span style={{ color: 'var(--pida-primary)' }}>✓</span> {line}
-            </Typography>
-          ))}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, pl: 2, ml: 1, borderLeft: '2px solid #e2e8f0' }}>
+          {lines.map((line, i) => {
+            const isSubItem = line.startsWith('-') || line.startsWith('•') || line.startsWith('  ');
+            const text = line.replace(/^[\s\-•]+/, '');
+            return (
+              <Typography key={i} variant="body2" sx={{ fontSize: '0.85rem', display: 'flex', alignItems: 'flex-start', color: 'text.secondary', gap: 1, ml: isSubItem ? 3 : 0 }}>
+                {!isSubItem && <span style={{ color: 'var(--pida-primary)', marginTop: '2px' }}>✓</span>}
+                {isSubItem && <span style={{ color: '#94a3b8', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
+                <span style={{ pt: '1px' }}>{text}</span>
+              </Typography>
+            );
+          })}
+          
+          {/* Spinner de "Pensando..." que desaparece cuando llega el texto */}
+          {isTyping && !hasContent && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1.5, mt: 0.5 }}>
+              <CircularProgress size={14} sx={{ color: 'var(--pida-primary)' }}/>
+              <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-primary)', fontStyle: 'italic' }}>
+                Redactando respuesta final...
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
     </Box>
@@ -1110,7 +1122,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     return (
       <>
         {statusLogContent && (
-          <MinimizableStatusLog content={statusLogContent}/>
+          <MinimizableStatusLog 
+            content={statusLogContent} 
+            hasContent={displayContent.trim().length > 0} 
+            isTyping={isCurrentlyTypingThis} 
+          />
         )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>
@@ -1195,22 +1211,30 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                     ml: 1.2,
                     mt: 0.5
                   }}>
-                    {researchStatuses.map((status, i) => (
-                      <Typography 
-                        key={i} 
-                        variant="body2" 
-                        sx={{ 
-                          fontSize: '0.85rem', 
-                          color: i === researchStatuses.length - 1 ? 'var(--pida-primary)' : 'text.secondary',
-                          fontWeight: i === researchStatuses.length - 1 ? 600 : 400,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <span style={{ color: 'var(--pida-primary)' }}>✓</span> {status}
-                      </Typography>
-                    ))}
+                    {researchStatuses.map((status, i) => {
+                      const isSubItem = status.startsWith('-') || status.startsWith('•') || status.startsWith('  ');
+                      const text = status.replace(/^[\s\-•]+/, '');
+                      const isLast = i === researchStatuses.length - 1;
+                      return (
+                        <Typography 
+                          key={i} 
+                          variant="body2" 
+                          sx={{ 
+                            fontSize: '0.85rem', 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            color: isLast && !isSubItem ? 'var(--pida-primary)' : 'text.secondary',
+                            fontWeight: isLast ? 600 : 400, 
+                            gap: 1, 
+                            ml: isSubItem ? 3 : 0 
+                          }}
+                        >
+                          {!isSubItem && <span style={{ color: 'var(--pida-primary)', marginTop: '2px' }}>✓</span>}
+                          {isSubItem && <span style={{ color: '#94a3b8', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
+                          <span style={{ pt: '1px' }}>{text}</span>
+                        </Typography>
+                      );
+                    })}
                   </Box>
                 )}
               </Box>
