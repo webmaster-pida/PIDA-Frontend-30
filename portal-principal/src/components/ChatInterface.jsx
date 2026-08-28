@@ -484,7 +484,7 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1.5, mt: 0.5 }}>
               <CircularProgress size={14} sx={{ color: 'var(--pida-primary)' }}/>
               <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-primary)', fontStyle: 'italic' }}>
-                Redactando respuesta final...
+                Procesando información y estructurando análisis...
               </Typography>
             </Box>
           )}
@@ -1057,6 +1057,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
+
+    // Eliminar dinámicamente cualquier etiqueta <pida_... o </pida_... incompleta al final de la cadena durante el tipeo
+    if (isCurrentlyTypingThis) {
+      displayContent = displayContent.replace(/<\/?(?:p(?:i(?:d(?:a(?:_[a-zA-Z0-9_]*)?)?)?)?)?$/i, "");
+    }
 
     let statusLogContent = null;
     const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/;
