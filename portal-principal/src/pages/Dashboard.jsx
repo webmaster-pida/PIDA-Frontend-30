@@ -387,7 +387,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
   };
 
   return (
-    <Box id="pida-app-layout" sx={{ display: 'flex', bgcolor: 'var(--pida-bg-app)', height: '100vh', overflow: 'hidden' }}>
+    <Box id="pida-app-layout" sx={{ display: 'flex', bgcolor: 'var(--pida-bg-app)', height: '100dvh', overflow: 'hidden' }}>
       <TermsUpdateModal />
       <Sidebar 
         currentView={currentView} 
@@ -497,7 +497,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
             {!isMobile && <Box component="img" src="/img/PIDA-MASCOTA-Trans-menu.png" sx={{ height: 45 }} />}
           </Box>
         </Box>
-        <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
           {currentView === 'investigador' && <ChatInterface key="chat-investigador" user={user} resetSignal={resetSignals.investigador} loadChatId={loadData.investigador} refreshHistory={fetchHistories} />}
           {currentView === 'analizador' && <AnalyzerInterface user={user} resetSignal={resetSignals.ana} loadAnaId={loadData.ana} />}
           {currentView === 'precalificador' && <PrequalifierInterface user={user} resetSignal={resetSignals.pre} loadPreId={loadData.pre} />}
