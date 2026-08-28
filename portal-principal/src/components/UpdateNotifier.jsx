@@ -88,7 +88,7 @@ export default function UpdateNotifier() {
         `}
       </style>
       <div style={{
-        background: '#ffffff',
+        background: 'var(--pida-bg-white, #ffffff)',
         width: '90%',
         maxWidth: '480px',
         borderRadius: '12px',
@@ -105,21 +105,21 @@ export default function UpdateNotifier() {
             position: 'absolute',
             top: '15px',
             right: '15px',
-            background: '#f1f5f9',
+            background: 'var(--pida-bg-app, #f1f5f9)',
             border: 'none',
             width: '32px',
             height: '32px',
             borderRadius: '8px',
             fontSize: '18px',
-            color: '#64748b',
+            color: 'var(--pida-text-muted, #64748b)',
             cursor: 'pointer',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             transition: 'all 0.2s'
           }}
-          onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
-          onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+          onMouseOver={(e) => { e.currentTarget.style.background = 'var(--pida-border, #e2e8f0)'; e.currentTarget.style.color = 'var(--pida-text-main, #0f172a)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'var(--pida-bg-app, #f1f5f9)'; e.currentTarget.style.color = 'var(--pida-text-muted, #64748b)'; }}
           title="Cerrar y continuar trabajando"
         >
           ✕
@@ -129,7 +129,7 @@ export default function UpdateNotifier() {
           width: '75px',
           height: '75px',
           borderRadius: '50%',
-          background: 'rgba(0, 195, 255, 0.1)',
+          background: 'var(--pida-hover-bg, rgba(0, 195, 255, 0.1))',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -144,7 +144,7 @@ export default function UpdateNotifier() {
         </div>
 
         <h2 style={{
-          color: 'var(--pida-primary, #101852)',
+          color: 'var(--pida-interactive, #101852)',
           fontSize: '1.4rem',
           fontWeight: '800',
           marginBottom: '15px'
@@ -170,10 +170,10 @@ export default function UpdateNotifier() {
           lineHeight: '1.5',
           marginBottom: '25px',
           textAlign: 'left',
-          background: '#f8fafc',
+          background: 'var(--pida-bg-app, #f8fafc)',
           padding: '12px',
           borderRadius: '0px 4px 4px 0px',
-          borderLeft: '4px solid #e36946'
+          borderLeft: '4px solid var(--red, #e36946)'
         }}>
           <strong>💡 Sugerencia:</strong> Si estás trabajando en algo importante, puedes cerrar este mensaje 
           haciendo clic en la "X" y refrescar la página más tarde para no perder tu progreso actual.
@@ -182,8 +182,8 @@ export default function UpdateNotifier() {
         <button 
           onClick={() => window.location.reload(true)}
           style={{
-            backgroundColor: 'var(--pida-primary, #101852)',
-            color: 'white',
+            backgroundColor: 'var(--pida-interactive, #101852)',
+            color: 'var(--navy-dark, #ffffff)',
             border: 'none',
             width: '100%',
             padding: '14px',
@@ -195,7 +195,7 @@ export default function UpdateNotifier() {
             boxShadow: '0 4px 12px rgba(16, 24, 82, 0.2)'
           }}
           onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--pida-accent, #003399)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'var(--pida-primary, #101852)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'var(--pida-interactive, #101852)'; e.currentTarget.style.transform = 'translateY(0)'; }}
         >
           Actualizar ahora
         </button>

@@ -168,14 +168,22 @@ export default function Sidebar({ currentView, setCurrentView, user, darkMode, s
         }}>
             {/* Selector de Modo Oscuro para Escritorio */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, color: 'rgba(255,255,255,0.8)' }}>
-              <LightModeIcon fontSize="small" />
+              <LightModeIcon 
+                fontSize="small" 
+                onClick={() => setDarkMode(false)}
+                sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}
+              />
               <Switch 
                 checked={darkMode} 
                 onChange={(e) => setDarkMode(e.target.checked)}
                 color="default" 
                 size="small"
               />
-              <DarkModeIcon fontSize="small" />
+              <DarkModeIcon 
+                fontSize="small" 
+                onClick={() => setDarkMode(true)}
+                sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}
+              />
             </Box>
 
             <Avatar 
