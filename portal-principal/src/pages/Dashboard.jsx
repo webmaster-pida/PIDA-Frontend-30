@@ -494,7 +494,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
               Ayuda
             </Button>
 
-            {!isMobile && <Box component="img" src="/img/PIDA-MASCOTA-menu.png" sx={{ height: 45 }} />}
+            {!isMobile && <Box component="img" src="/img/PIDA-MASCOTA-Trans-menu.png" sx={{ height: 45 }} />}
           </Box>
         </Box>
         <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
