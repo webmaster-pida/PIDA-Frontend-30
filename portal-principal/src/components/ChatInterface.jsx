@@ -488,14 +488,14 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent, isResearchMode })
                   fontSize: '0.85rem', 
                   display: 'flex', 
                   alignItems: 'flex-start', 
-                  color: isSubItem ? 'text.secondary' : 'text.primary', 
+                      color: isSubItem ? 'var(--pida-text-muted)' : 'var(--pida-text-main)', 
                   fontWeight: isSubItem ? 400 : 600,
                   gap: 1, 
                   ml: isSubItem ? 3 : 0 
                 }}
               >
-                {!isSubItem && <span style={{ color: 'var(--pida-primary)', marginTop: '2px' }}>✓</span>}
-                {isSubItem && <span style={{ color: '#94a3b8', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
+                    {!isSubItem && <span style={{ color: 'var(--pida-interactive)', marginTop: '2px' }}>✓</span>}
+                    {isSubItem && <span style={{ color: 'var(--pida-text-muted)', fontSize: '1.2em', lineHeight: '14px' }}>•</span>}
                 <span style={{ pt: '1px' }}>{text}</span>
               </Typography>
             );
@@ -504,8 +504,8 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent, isResearchMode })
           {/* Spinner de "Pensando..." que desaparece cuando llega el texto */}
           {isTyping && !hasContent && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1.5, mt: 0.5 }}>
-                <CircularProgress size={14} sx={{ color: 'var(--pida-interactive)' }}/>
-                <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-interactive)', fontStyle: 'italic' }}>
+                    <CircularProgress size={14} sx={{ color: 'var(--pida-interactive)' }}/>
+                    <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-interactive)', fontStyle: 'italic' }}>
                 Procesando información y estructurando análisis...
               </Typography>
             </Box>
