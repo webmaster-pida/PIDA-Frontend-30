@@ -442,7 +442,7 @@ const MermaidChart = ({ chartCode, isTyping }) => {
   );
 };
 
-const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
+const MinimizableStatusLog = ({ content, isTyping, hasContent, isResearchMode }) => {
   const [isOpen, setIsOpen] = useState(true);
   const lines = (content || '').split('\n')
     .filter(line => line.trim() !== '')
@@ -452,9 +452,14 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
     }));
 
   return (
-    <Box sx={{ width: '100%', mt: 1, mb: 2 }}>
+    <Box sx={{ 
+      width: '100%', 
+      maxWidth: isResearchMode ? '500px' : '400px', 
+      mt: 1, 
+      mb: 2 
+    }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
-        <Button onClick={() => setIsOpen(!isOpen)} size="small" sx={{ color: 'text.secondary', textTransform: 'none', minWidth: 0, p: 0 }}>
+        <Button onClick={() => setIsOpen(!isOpen)} size="small" sx={{ color: 'var(--pida-text-muted)', textTransform: 'none', minWidth: 0, p: 0 }}>
           {isOpen ? 'Ocultar progreso' : 'Ver progreso'}
         </Button>
       </Box>
@@ -466,7 +471,7 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
             gap: 0.8, 
             pl: 2, 
             ml: 1, 
-            borderLeft: '2px solid #e2e8f0',
+            borderLeft: '2px solid var(--pida-border)',
             // Eliminamos maxHeight y overflowY para evitar el scroll interno
             pr: 1,
             transition: 'all 0.3s ease-in-out'
@@ -499,8 +504,8 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
           {/* Spinner de "Pensando..." que desaparece cuando llega el texto */}
           {isTyping && !hasContent && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1.5, mt: 0.5 }}>
-              <CircularProgress size={14} sx={{ color: 'var(--pida-primary)' }}/>
-              <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-primary)', fontStyle: 'italic' }}>
+                <CircularProgress size={14} sx={{ color: 'var(--pida-interactive)' }}/>
+                <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'var(--pida-interactive)', fontStyle: 'italic' }}>
                 Procesando información y estructurando análisis...
               </Typography>
             </Box>
@@ -1216,6 +1221,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             content={statusLogContent} 
             hasContent={displayContent.trim().length > 0} 
             isTyping={isCurrentlyTypingThis} 
+            isResearchMode={isResearchMode}
           />
         )}
         <div className="markdown-content">

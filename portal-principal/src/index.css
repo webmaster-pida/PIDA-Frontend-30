@@ -325,6 +325,28 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
 .pida-bubble { 
     max-width: 85%; padding: 20px 28px; border-radius: 12px; font-size: 1rem; line-height: 1.6; 
     box-shadow: 0 1px 3px rgba(0,0,0,0.08); user-select: text!important; -webkit-user-select: text!important; 
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+.markdown-content {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.markdown-content p {
+    max-width: 100%;
+    white-space: normal;
+}
+
+/* Asegurar que los bloques de código sí puedan hacer scroll interno sin romper la burbuja */
+.markdown-content pre {
+    max-width: 100%;
+    overflow-x: auto;
 }
 .user-message-bubble { align-self: flex-end; background-color: var(--pida-accent); color: white; border-bottom-right-radius: 2px; }
 .pida-message-bubble { align-self: flex-start; background-color: var(--pida-bg-white); color: var(--pida-text-main); border: 1px solid var(--pida-border); border-bottom-left-radius: 2px; }
@@ -579,7 +601,6 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
 #pre-analysis-result li::marker { color: var(--pida-accent); font-weight: bold; }
 #pre-analysis-result blockquote { border-left: 4px solid var(--pida-accent); background: #f8fafc; margin: 1.5em 0; padding: 15px 20px; font-style: italic; color: #475569; border-radius: 0 8px 8px 0; }
 
-.pida-bubble { overflow-x: auto; }
 .pida-bubble table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 20px 0; font-size: 0.9rem; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
 .pida-bubble th, .pida-bubble td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; line-height: 1.5; vertical-align: top; }
 .pida-bubble th { background-color: #f1f5f9; color: var(--pida-primary); font-weight: 700; border-bottom: 2px solid #cbd5e1; white-space: nowrap; }
