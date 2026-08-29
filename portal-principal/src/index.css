@@ -315,9 +315,9 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
 .pida-header-btn.primary { background: var(--pida-primary); color: white; border-color: var(--pida-primary); }
 .pida-header-btn.primary:hover { background: 'var(--pida-accent)'; }
 .pida-header-mascot { height: 55px; width: auto; margin-left: auto; object-fit: contain; }
-.pida-view { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
+.pida-view { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; max-width: 100vw; overflow-x: hidden; box-sizing: border-box; }
 .pida-view.hidden { display: none; }
-.pida-view-content { flex: 1; overflow-y: auto; overflow-x: hidden !important; padding: 30px 10%; scroll-behavior: auto; }
+.pida-view-content { flex: 1; overflow-y: auto; overflow-x: hidden !important; padding: 30px 10%; scroll-behavior: auto; max-width: 100vw; box-sizing: border-box; }
 .pida-view-content::-webkit-scrollbar, .pida-dropdown-content::-webkit-scrollbar { width: 8px; }
 .pida-view-content::-webkit-scrollbar-thumb, .pida-dropdown-content::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 4px; }
 #pida-chat-box { display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; width: 100%; max-width: 100%; overflow-x: hidden; }
@@ -363,7 +363,7 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
 .pida-bubble h2 { font-size: 1.15em; }
 .pida-bubble h3 { font-size: 1.05em; }
 .pida-bubble strong { color: var(--pida-primary); font-weight: 700; }
-.pida-bubble a { color: var(--pida-accent); text-decoration: underline; font-weight: 600; }
+.pida-bubble a { color: var(--pida-accent); text-decoration: underline; font-weight: 600; word-break: break-all; white-space: normal; }
 .user-message-bubble p, .user-message-bubble strong, .user-message-bubble h1, .user-message-bubble h2, .user-message-bubble li { color: white; border-color: rgba(255,255,255,0.3); }
 .user-message-bubble a { color: #dbeafe; }
 
@@ -392,8 +392,8 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
 .typing-dot:nth-child(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-.follow-up-card { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-.follow-up-card h3 { font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 10px; font-weight: 600; }
+.follow-up-card, .follow-up-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+.follow-up-card h3, .follow-up-section h3 { font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 10px; font-weight: 600; }
 .follow-up-btn { display: block; width: 100%; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; margin-bottom: 8px; border-radius: 6px; color: var(--pida-primary); cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
 .follow-up-btn:hover { background: white; border-color: var(--pida-accent); color: var(--pida-accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 .follow-up-btn {
@@ -401,7 +401,7 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
 }
-.pida-view-form { background-color: var(--pida-bg-white); padding: 20px 10%; border-top: 1px solid var(--pida-border); z-index: 10; position: relative; }
+.pida-view-form { background-color: var(--pida-bg-white); padding: 20px 10%; border-top: 1px solid var(--pida-border); z-index: 10; position: relative; width: 100%; box-sizing: border-box; }
 .pida-textarea { width: 100%; padding: 15px; border: 1px solid var(--pida-border); border-radius: 8px; font-size: 1rem; resize: none; background-color: #FAFAFA; outline: none; transition: all 0.3s; }
 .pida-textarea:focus { background: white; border-color: var(--pida-accent); box-shadow: 0 0 0 3px rgba(0,86,179,0.1); }
 .pida-form-actions { display: flex; justify-content: space-between; margin-top: 12px; }
@@ -471,7 +471,7 @@ section#root { padding: 0 !important; margin: 0 !important; height: 0 !important
     .pida-top-header { padding: 0 15px; height: 60px; }
     .pida-header-mascot { height: 40px; }
     .pida-view { padding-bottom: 0 !important; }
-    .pida-view-form { padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px)) !important; margin-bottom: 0 !important; position: relative; z-index: 20; background: var(--pida-bg-white); border-bottom: none !important; }
+    .pida-view-form { padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px)) !important; margin-bottom: 0 !important; position: relative; z-index: 20; background: var(--pida-bg-white); border-bottom: none !important; width: 100%; box-sizing: border-box; max-width: 100vw; }
     .pida-form-actions { flex-wrap: wrap; gap: 10px; margin-top: 10px; margin-bottom: 0 !important; }
     .pida-button-primary { width: 100%; padding: 12px; order: 1; }
     .pida-button-secondary { width: 100%; text-align: center; margin-top: 0; order: 2; padding: 10px; }
@@ -713,10 +713,10 @@ input:checked + .slider:before { transform: translateX(24px); }
     .pida-context-controls .plan-badge { width: auto !important; min-width: auto !important; padding: 0 12px !important; }
 }
 
-html, body { min-height: 100dvh; width: 100%; max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
+html, body { min-height: 100dvh; width: 100%; max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; position: relative; }
 #pida-app-layout { height: 100dvh; height: 100svh; display: flex; flex-direction: row; overflow: hidden !important; width: 100%; max-width: 100%; }
-.pida-view-content { flex: 1 1 auto; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
-.pida-view-form { flex: 0 0 auto; background: var(--pida-bg-white); z-index: 10; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pida-view-content { flex: 1 1 auto; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; padding-bottom: 20px; box-sizing: border-box; max-width: 100vw; }
+.pida-view-form { flex: 0 0 auto; background: var(--pida-bg-white); z-index: 10; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); width: 100%; box-sizing: border-box; }
 
 .nav-login-btn {
 background: transparent;
