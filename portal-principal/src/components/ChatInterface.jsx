@@ -444,7 +444,19 @@ const MermaidChart = ({ chartCode, isTyping }) => {
 
 const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const lines = (content || '').split('\n').filter(line => line.trim() !== '');
+  const dummyRef = useRef(null);
+  const lines = (content || '').split('\n')
+    .filter(line => line.trim() !== '')
+    .map(line => ({
+      id: `status-${line.replace(/[^a-zA-Z0-9]/g, '').substring(0, 40)}-${line.length}`,
+      text: line
+    }));
+
+  useEffect(() => {
+    if (isOpen && dummyRef.current) {
+      dummyRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [content, isOpen]);
 
   return (
     <Box sx={{ width: '100%', mt: 1, mb: 2 }}>
@@ -454,13 +466,27 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
         </Button>
       </Box>
       {isOpen && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, pl: 2, ml: 1, borderLeft: '2px solid #e2e8f0' }}>
-          {lines.map((line, i) => {
-            const isSubItem = /^[\s\-•]/.test(line);
-            const text = line.replace(/^[\s\-•]+/, '');
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 0.8, 
+            pl: 2, 
+            ml: 1, 
+            borderLeft: '2px solid #e2e8f0',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            pr: 1,
+            '&::-webkit-scrollbar': { width: '4px' },
+            '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px' }
+          }}
+        >
+          {lines.map((item) => {
+            const isSubItem = /^[\s\-•]/.test(item.text);
+            const text = item.text.replace(/^[\s\-•]+/, '');
             return (
               <Typography 
-                key={i} 
+                key={item.id} 
                 variant="body2" 
                 sx={{ 
                   fontSize: '0.85rem', 
@@ -488,6 +514,7 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
               </Typography>
             </Box>
           )}
+          <div ref={dummyRef} />
         </Box>
       )}
     </Box>
@@ -542,22 +569,35 @@ const markdownComponents = {
   },
   table: ({ node, ...props }) => (
     <div style={{ display: 'block', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-      <TableContainer component={Paper} sx={{ width: '100%', my: 2, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          width: '100%', 
+          my: 2, 
+          boxShadow: 'none', 
+          border: '1px solid var(--pida-border, #e2e8f0)', 
+          borderRadius: '8px',
+          bgcolor: 'var(--pida-bg-white, #ffffff)',
+          color: 'var(--pida-text-main, inherit)'
+        }}
+      >
         <Table size="small" sx={{ minWidth: 600 }} {...props} />
       </TableContainer>
     </div>
   ),
-  thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: '#f1f5f9' }} {...props} />,
+  thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: 'var(--pida-bg-app, #f1f5f9)' }} {...props} />,
   tbody: ({ node, ...props }) => <TableBody {...props} />,
   tr: ({ node, ...props }) => <TableRow hover {...props} />,
   th: ({ node, ...props }) => (
     <TableCell 
       sx={{ 
         fontWeight: 'bold', 
-        color: 'var(--pida-primary)', 
-        borderBottom: '2px solid #cbd5e1',
+        color: 'var(--pida-primary, #101852)', 
+        borderBottom: '2px solid var(--pida-border, #cbd5e1)',
         whiteSpace: 'normal',
-        lineHeight: 1.3
+        lineHeight: 1.3,
+        bgcolor: 'var(--pida-bg-app, #f1f5f9)',
+        borderColor: 'var(--pida-border, #e2e8f0)'
       }} 
       {...props} 
     />
@@ -565,10 +605,11 @@ const markdownComponents = {
   td: ({ node, ...props }) => (
     <TableCell 
       sx={{ 
-        borderColor: '#e2e8f0',
+        borderColor: 'var(--pida-border, #e2e8f0)',
         verticalAlign: 'top',
         whiteSpace: 'normal',
-        wordBreak: 'break-word'
+        wordBreak: 'break-word',
+        color: 'var(--pida-text-main, inherit)'
       }} 
       {...props} 
     />
@@ -583,6 +624,22 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const [questionQueue, setQuestionQueue] = useState([]);
   const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
   const [researchStatuses, setResearchStatuses] = useState([]);
+
+  const lastMessage = messages[messages.length - 1];
+  const isLastMessageModel = lastMessage && lastMessage.role === 'model';
+  const isLastMessageEmpty = !lastMessage || lastMessage.content === '';
+  
+  const isTransitioningStatusLog = isLastMessageModel && 
+    lastMessage.content.length > 0 && 
+    lastMessage.content.length < "<pida_status_log>".length && 
+    "<pida_status_log>".startsWith(lastMessage.content);
+
+  const showOuterStatus = isTyping && (
+    !lastMessage || 
+    lastMessage.role === 'user' || 
+    isLastMessageEmpty || 
+    isTransitioningStatusLog
+  );
 
   // Interceptador dinámico de componentes Markdown para inyectar 'isTyping' a MermaidChart
   const customMarkdownComponents = React.useMemo(() => ({
@@ -1221,7 +1278,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             </div>
           ))}
 
-          {isTyping && (messages.length === 0 || messages[messages.length - 1].role === 'user' || messages[messages.length - 1].content === '') && (
+          {showOuterStatus && (
             <div className="pida-bubble pida-message-bubble" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <MinimizableStatusLog 
                 content={researchStatuses.join('\n')} 
