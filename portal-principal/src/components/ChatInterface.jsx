@@ -1058,18 +1058,31 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
 
-    // Eliminar dinámicamente cualquier etiqueta <pida_... o </pida_... incompleta al final de la cadena durante el tipeo
-    if (isCurrentlyTypingThis) {
-      displayContent = displayContent.replace(/<\/?(?:p(?:i(?:d(?:a(?:_[a-zA-Z0-9_]*)?)?)?)?)?$/i, "");
-    }
-
     let statusLogContent = null;
     const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/;
-    const matchLog = displayContent.match(logRegex);
-    
-    if (matchLog) {
-      statusLogContent = matchLog[1].trim();
-      displayContent = displayContent.replace(logRegex, ""); 
+
+    // --- CORRECCIÓN DE PARPADEO / REDIBUJADO ---
+    const openingTag = "<pida_status_log>";
+    if (isCurrentlyTypingThis && displayContent.length > 0 && displayContent.length < openingTag.length && openingTag.startsWith(displayContent)) {
+      statusLogContent = researchStatuses.join('\n');
+      displayContent = "";
+    } else {
+      // Eliminar dinámicamente cualquier etiqueta <pida_... o </pida_... incompleta al final de la cadena durante el tipeo
+      if (isCurrentlyTypingThis) {
+        displayContent = displayContent.replace(/<\/?(?:p(?:i(?:d(?:a(?:_[a-zA-Z0-9_]*)?)?)?)?)?$/i, "");
+      }
+
+      const matchLog = displayContent.match(logRegex);
+      if (matchLog) {
+        statusLogContent = matchLog[1].trim();
+        displayContent = displayContent.replace(logRegex, ""); 
+        
+        // Limpiar cualquier etiqueta de cierre parcial al final del statusLogContent
+        if (isCurrentlyTypingThis) {
+          const partialCloseTagRegex = /<\/p(?:i(?:d(?:a(?:_(?:s(?:t(?:a(?:t(?:u(?:s(?:_(?:l(?:o(?:g>?)?)?)?)?)?)?)?)?)?)?)?)?)?)?$/i;
+          statusLogContent = statusLogContent.replace(partialCloseTagRegex, "").trim();
+        }
+      }
     }
 
         // Procesamos las líneas para corregir negritas incompletas, pero manteniendo intactos los bloques de Mermaid
