@@ -444,19 +444,12 @@ const MermaidChart = ({ chartCode, isTyping }) => {
 
 const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const dummyRef = useRef(null);
   const lines = (content || '').split('\n')
     .filter(line => line.trim() !== '')
-    .map(line => ({
-      id: `status-${line.replace(/[^a-zA-Z0-9]/g, '').substring(0, 40)}-${line.length}`,
+    .map((line, i) => ({
+      id: `status-${i}`,
       text: line
     }));
-
-  useEffect(() => {
-    if (isOpen && dummyRef.current) {
-      dummyRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [content, isOpen]);
 
   return (
     <Box sx={{ width: '100%', mt: 1, mb: 2 }}>
@@ -474,11 +467,9 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
             pl: 2, 
             ml: 1, 
             borderLeft: '2px solid #e2e8f0',
-            maxHeight: '200px',
-            overflowY: 'auto',
+            // Eliminamos maxHeight y overflowY para evitar el scroll interno
             pr: 1,
-            '&::-webkit-scrollbar': { width: '4px' },
-            '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px' }
+            transition: 'all 0.3s ease-in-out'
           }}
         >
           {lines.map((item) => {
@@ -514,7 +505,6 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent }) => {
               </Typography>
             </Box>
           )}
-          <div ref={dummyRef} />
         </Box>
       )}
     </Box>
@@ -628,18 +618,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const lastMessage = messages[messages.length - 1];
   const isLastMessageModel = lastMessage && lastMessage.role === 'model';
   const isLastMessageEmpty = !lastMessage || lastMessage.content === '';
-  
-  const isTransitioningStatusLog = isLastMessageModel && 
-    lastMessage.content.length > 0 && 
-    lastMessage.content.length < "<pida_status_log>".length && 
-    "<pida_status_log>".startsWith(lastMessage.content);
-
-  const showOuterStatus = isTyping && (
-    !lastMessage || 
-    lastMessage.role === 'user' || 
-    isLastMessageEmpty || 
-    isTransitioningStatusLog
-  );
 
   // Interceptador dinámico de componentes Markdown para inyectar 'isTyping' a MermaidChart
   const customMarkdownComponents = React.useMemo(() => ({
@@ -798,11 +776,26 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
+  // NUEVO SISTEMA DE SCROLL REACTIVO
   useEffect(() => {
-    if (isAtBottom) {
-      scrollToBottom();
-    }
-  }, [messages, isTyping]);
+    const chatBox = document.getElementById('pida-chat-box');
+    if (!chatBox) return;
+
+    const observer = new ResizeObserver(() => {
+      if (isAtBottom && messagesEndRef.current) {
+        // Truco premium: 'auto' (instantáneo) mientras escribe/dibuja para no 
+        // encolar animaciones, y 'smooth' solo cuando el usuario navega o envía.
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: isTyping ? 'auto' : 'smooth', 
+          block: 'end' 
+        });
+      }
+    });
+
+    observer.observe(chatBox);
+
+    return () => observer.disconnect();
+  }, [isAtBottom, isTyping]);
 
   // EFECTO: PROCESADOR DE COLA DE ESTADOS VISUALES
   useEffect(() => {
@@ -873,7 +866,11 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     if (!textOverride) setInput('');
     
-    setMessages(prev => [...prev, { role: 'user', content: textToSend }]);
+    setMessages(prev => [
+      ...prev, 
+      { role: 'user', content: textToSend },
+      { role: 'model', content: '' } // Creamos la burbuja de PIDA inmediatamente
+    ]);
     setIsTyping(true);
     setCurrentStatus('Conectando...');
     setStatusQueue([]); 
@@ -1116,30 +1113,27 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     let displayContent = msg.content;
 
     let statusLogContent = null;
-    const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/;
+    const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/i;
 
-    // --- CORRECCIÓN DE PARPADEO / REDIBUJADO ---
-    const openingTag = "<pida_status_log>";
-    if (isCurrentlyTypingThis && displayContent.length > 0 && displayContent.length < openingTag.length && openingTag.startsWith(displayContent)) {
+    // 1. Si está escribiendo, usamos SIEMPRE el estado en vivo (fluidez perfecta)
+    if (isCurrentlyTypingThis && researchStatuses.length > 0) {
       statusLogContent = researchStatuses.join('\n');
-      displayContent = "";
-    } else {
-      // Eliminar dinámicamente cualquier etiqueta <pida_... o </pida_... incompleta al final de la cadena durante el tipeo
-      if (isCurrentlyTypingThis) {
-        displayContent = displayContent.replace(/<\/?(?:p(?:i(?:d(?:a(?:_[a-zA-Z0-9_]*)?)?)?)?)?$/i, "");
-      }
+    }
 
-      const matchLog = displayContent.match(logRegex);
-      if (matchLog) {
+    // 2. Extraer y limpiar el texto que viene del servidor (evita que se imprima la etiqueta)
+    const matchLog = displayContent.match(logRegex);
+    if (matchLog) {
+      // Si ya terminó de escribir, nos pasamos a la versión consolidada del historial
+      if (!isCurrentlyTypingThis) {
         statusLogContent = matchLog[1].trim();
-        displayContent = displayContent.replace(logRegex, ""); 
-        
-        // Limpiar cualquier etiqueta de cierre parcial al final del statusLogContent
-        if (isCurrentlyTypingThis) {
-          const partialCloseTagRegex = /<\/p(?:i(?:d(?:a(?:_(?:s(?:t(?:a(?:t(?:u(?:s(?:_(?:l(?:o(?:g>?)?)?)?)?)?)?)?)?)?)?)?)?)?)?$/i;
-          statusLogContent = statusLogContent.replace(partialCloseTagRegex, "").trim();
-        }
       }
+      // Removemos la etiqueta del texto visible siempre
+      displayContent = displayContent.replace(logRegex, "");
+    }
+
+    // 3. Limpieza de máquina de escribir: Si una etiqueta a medio formar se cuela, la borramos visualmente
+    if (isCurrentlyTypingThis) {
+      displayContent = displayContent.replace(/<\/?(?:p(?:i(?:d(?:a(?:_[a-zA-Z0-9_]*)?)?)?)?)?$/i, "");
     }
 
         // Procesamos las líneas para corregir negritas incompletas, pero manteniendo intactos los bloques de Mermaid
@@ -1278,16 +1272,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             </div>
           ))}
 
-          {showOuterStatus && (
-            <div className="pida-bubble pida-message-bubble" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-              <MinimizableStatusLog 
-                content={researchStatuses.join('\n')} 
-                isTyping={true} 
-                hasContent={false} 
-              />
-            </div>
-          )}
-          
           <div ref={messagesEndRef} style={{ height: '1px' }} />
         </div>
       </div>
