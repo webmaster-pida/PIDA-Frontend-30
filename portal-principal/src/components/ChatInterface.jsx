@@ -454,7 +454,7 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent, isResearchMode })
   return (
     <Box sx={{ 
       width: '100%', 
-      maxWidth: isResearchMode ? '500px' : '400px', 
+      maxWidth: { xs: '100%', sm: isResearchMode ? '500px' : '400px' }, 
       mt: 1, 
       mb: 2 
     }}>
@@ -491,7 +491,9 @@ const MinimizableStatusLog = ({ content, isTyping, hasContent, isResearchMode })
                       color: isSubItem ? 'var(--pida-text-muted)' : 'var(--pida-text-main)', 
                   fontWeight: isSubItem ? 400 : 600,
                   gap: 1, 
-                  ml: isSubItem ? 3 : 0 
+                  ml: isSubItem ? 3 : 0,
+                  wordBreak: 'break-word',
+                  minWidth: 0
                 }}
               >
                     {!isSubItem && <span style={{ color: 'var(--pida-interactive)', marginTop: '2px' }}>✓</span>}
@@ -1311,7 +1313,15 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
       <form className="pida-view-form" onSubmit={(e) => handleSend(e)}>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, mt: messages.length > 0 ? -1.5 : 0 }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: { xs: 'column', sm: 'row' },
+      gap: { xs: 1.5, sm: 0 },
+      justifyContent: 'space-between', 
+      alignItems: { xs: 'stretch', sm: 'center' }, 
+      mb: 1.5, 
+      mt: messages.length > 0 ? -1.5 : 0 
+    }}>
           <ToggleButtonGroup
             value={isResearchMode ? 'deep_research' : 'chat'}
             exclusive
@@ -1342,9 +1352,9 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                 borderRadius: '6px !important',
                 mx: 0.5,
                 flexGrow: { xs: 1, sm: 0 },
-                px: { xs: 1.5, sm: 2.5 },
+            px: { xs: 1, sm: 2.5 },
                 py: 0.5,
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 fontWeight: 700,
                 textTransform: 'none',
                 color: '#475569',
@@ -1368,11 +1378,21 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
           </ToggleButtonGroup>
 
           {messages.length > 0 && (
-            <ButtonGroup size="small" variant="outlined" color="inherit" sx={{ borderColor: '#e2e8f0', bgcolor: 'white' }}>
-              <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={handleTXTDownload}>TXT</Button>
-              <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={() => handleBackendDownload('docx')}>DOCX</Button>
-              <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }} onClick={() => handleBackendDownload('pdf')}>PDF</Button>
-            </ButtonGroup>
+        <ButtonGroup 
+          size="small" 
+          variant="outlined" 
+          color="inherit" 
+          sx={{ 
+            borderColor: '#e2e8f0', 
+            bgcolor: 'white',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'center', sm: 'flex-start' }
+          }}
+        >
+          <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary', flex: { xs: 1, sm: 'initial' } }} onClick={handleTXTDownload}>TXT</Button>
+          <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary', flex: { xs: 1, sm: 'initial' } }} onClick={() => handleBackendDownload('docx')}>DOCX</Button>
+          <Button sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary', flex: { xs: 1, sm: 'initial' } }} onClick={() => handleBackendDownload('pdf')}>PDF</Button>
+        </ButtonGroup>
           )}
         </Box>
 
