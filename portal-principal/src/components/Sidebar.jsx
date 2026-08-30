@@ -30,11 +30,10 @@ import {
   ManageSearch as ManageSearchIcon
 } from '@mui/icons-material';
 import { 
-  DarkMode as DarkModeIcon, 
-  LightMode as LightModeIcon 
+  DarkModeOutlined as DarkModeIcon, 
+  LightModeOutlined as LightModeIcon 
 } from '@mui/icons-material';
 import { auth } from '../config/firebase';
-import { Switch } from '@mui/material';
 
 export default function Sidebar({ currentView, setCurrentView, user, darkMode, setDarkMode }) {
   const theme = useTheme();
@@ -166,24 +165,46 @@ export default function Sidebar({ currentView, setCurrentView, user, darkMode, s
             alignItems: 'center', 
             textAlign: 'center',
         }}>
-            {/* Selector de Modo Oscuro para Escritorio */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, color: 'rgba(255,255,255,0.8)' }}>
-              <LightModeIcon 
-                fontSize="small" 
-                onClick={() => setDarkMode(false)}
-                sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}
+            {/* Selector de Modo Oscuro para Escritorio (Custom Toggle) */}
+            <Box
+              onClick={() => setDarkMode(!darkMode)}
+              sx={{
+                width: 64,
+                height: 32,
+                borderRadius: '16px',
+                bgcolor: 'rgba(0,0,0,0.15)',
+                position: 'relative',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                px: '4px',
+                mb: 2,
+                border: '1px solid rgba(255,255,255,0.1)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  bgcolor: 'rgba(0,0,0,0.25)',
+                }
+              }}
+            >
+              <Box
+                sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  position: 'absolute',
+                  left: darkMode ? 'calc(100% - 28px)' : '4px',
+                  transition: 'left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                  zIndex: 1,
+                }}
               />
-              <Switch 
-                checked={darkMode} 
-                onChange={(e) => setDarkMode(e.target.checked)}
-                color="default" 
-                size="small"
-              />
-              <DarkModeIcon 
-                fontSize="small" 
-                onClick={() => setDarkMode(true)}
-                sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}
-              />
+              <Box sx={{ zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24 }}>
+                <LightModeIcon sx={{ fontSize: 16, color: darkMode ? 'rgba(255,255,255,0.5)' : '#ffffff', transition: 'color 0.3s ease' }} />
+              </Box>
+              <Box sx={{ zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24 }}>
+                <DarkModeIcon sx={{ fontSize: 16, color: darkMode ? '#ffffff' : 'rgba(255,255,255,0.5)', transition: 'color 0.3s ease' }} />
+              </Box>
             </Box>
 
             <Avatar 
