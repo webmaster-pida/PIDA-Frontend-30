@@ -1142,14 +1142,13 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
 
-    // CONVERSIÓN DE ¿...? A ENLACES EN MODO CHAT NORMAL
-if (!isResearchMode && displayContent) {
-  displayContent = displayContent.replace(/¿([^?]+)\?/g, (match, p1) => {
-    const queryText = encodeURIComponent(`¿${p1}?`);
-    // ✅ Retorna la estructura correcta de enlace Markdown: [Texto](protocolo:url)
-    return `[¿${p1}?](pida-query:${queryText})`; 
-  });
-}
+    // CONVERSION DE ¿...? A ENLACES EN MODO CHAT NORMAL
+        if (!isResearchMode && displayContent) {
+          displayContent = displayContent.replace(/¿([^?]+)\?/g, (match, p1) => {
+            const queryText = encodeURIComponent(`¿${p1}?`);
+            return `¿${p1}?`;
+          });
+        }
 
     let statusLogContent = null;
     const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/i;
