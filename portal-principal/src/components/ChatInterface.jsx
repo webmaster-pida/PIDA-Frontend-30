@@ -1233,24 +1233,47 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         </div>
         
         {questions.length > 0 && (
-          <div className="follow-up-section">
-            <strong style={{ display: 'block', marginTop: '15px', marginBottom: '10px', color: 'var(--pida-primary)' }}>
-              Preguntas de seguimiento sugeridas:
-            </strong>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {questions.map((q, i) => (
-                <button 
-                  key={i} 
-                  className="follow-up-btn"
-                  onClick={() => handleFollowUpClick(q)}
-                  disabled={questionQueue.includes(q)}
-                  style={{ opacity: questionQueue.includes(q) ? 0.6 : 1 }}
-                >
-                  {questionQueue.includes(q) ? `⏳ En cola: ${q}` : q}
-                </button>
-              ))}
+          isResearchMode ? (
+            <div className="follow-up-section">
+              <strong style={{ display: 'block', marginTop: '15px', marginBottom: '10px', color: 'var(--pida-primary)' }}>
+                Preguntas de seguimiento sugeridas:
+              </strong>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {questions.map((q, i) => (
+                  <button 
+                    key={i} 
+                    className="follow-up-btn"
+                    onClick={() => handleFollowUpClick(q)}
+                    disabled={questionQueue.includes(q)}
+                    style={{ opacity: questionQueue.includes(q) ? 0.6 : 1 }}
+                  >
+                    {questionQueue.includes(q) ? `⏳ En cola: ${q}` : q}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <ul style={{ margin: '15px 0 0 0', paddingLeft: '20px', listStyleType: 'disc' }}>
+              {questions.map((q, i) => (
+                <li key={i} style={{ marginBottom: '8px', color: 'var(--pida-text-main)' }}>
+                  <span
+                    onClick={() => handleFollowUpClick(q)}
+                    style={{
+                      color: 'var(--pida-primary)',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 'inherit'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.color = 'var(--pida-accent)'}
+                    onMouseOut={(e) => e.currentTarget.style.color = 'var(--pida-primary)'}
+                  >
+                    {q}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
         )}
       </>
     );
