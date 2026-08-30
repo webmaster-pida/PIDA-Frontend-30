@@ -173,6 +173,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [currentView, setCurrentView] = useState('investigador'); 
+  const [isResearchMode, setIsResearchMode] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [hasValidAccess, setHasValidAccess] = useState(false);
   const [userPlan, setUserPlan] = useState('basico'); 
@@ -417,7 +418,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
             }} 
             sx={{ ...headerBtnSx, display: currentView === 'cuenta' ? 'none' : 'inline-flex' }}
           >
-            {isMobile ? 'Nuevo' : (currentView === 'investigador' ? 'Nuevo Chat' : currentView === 'analizador' ? 'Nuevo Análisis' : 'Nuevo Caso')}
+            {isMobile ? 'Nuevo' : (currentView === 'investigador' ? (isResearchMode ? 'Nueva Investigación' : 'Nuevo Chat') : currentView === 'analizador' ? 'Nuevo Análisis' : 'Nuevo Caso')}
           </Button>
           
           {currentView !== 'cuenta' && (
@@ -515,7 +516,7 @@ export default function Dashboard({ user, onRequireSubscription }) {
           </Box>
         </Box>
         <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {currentView === 'investigador' && <ChatInterface key="chat-investigador" user={user} resetSignal={resetSignals.investigador} loadChatId={loadData.investigador} refreshHistory={fetchHistories} />}
+          {currentView === 'investigador' && <ChatInterface key="chat-investigador" user={user} resetSignal={resetSignals.investigador} loadChatId={loadData.investigador} refreshHistory={fetchHistories} isResearchMode={isResearchMode} setIsResearchMode={setIsResearchMode} />}
           {currentView === 'analizador' && <AnalyzerInterface user={user} resetSignal={resetSignals.ana} loadAnaId={loadData.ana} />}
           {currentView === 'precalificador' && <PrequalifierInterface user={user} resetSignal={resetSignals.pre} loadPreId={loadData.pre} />}
           {currentView === 'cuenta' && <AccountInterface user={user} isVip={isVip} />}

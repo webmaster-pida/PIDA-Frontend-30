@@ -613,13 +613,12 @@ const markdownComponents = {
   )
 };
 
-export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchModeProp = false }) {
+export default function ChatInterface({ user, resetSignal, loadChatId, refreshHistory, isResearchMode = false, setIsResearchMode = () => {} }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [questionQueue, setQuestionQueue] = useState([]);
-  const [isResearchMode, setIsResearchMode] = useState(isResearchModeProp);
   const [researchStatuses, setResearchStatuses] = useState([]);
 
   const lastMessage = messages[messages.length - 1];
