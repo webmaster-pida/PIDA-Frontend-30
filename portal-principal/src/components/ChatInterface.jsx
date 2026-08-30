@@ -1093,6 +1093,43 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     }
   };
   
+  const customMarkdownComponents = React.useMemo(() => ({
+    ...markdownComponents,
+    a: ({ node, ...props }) => {
+      if (!isResearchMode && props.href && props.href.startsWith('pida-query:')) {
+        const queryText = decodeURIComponent(props.href.substring(11));
+        return (
+          <span
+            onClick={(e) => {
+              e.preventDefault();
+              handleFollowUpClick(queryText);
+            }}
+            style={{
+              color: 'var(--pida-primary)',
+              textDecoration: 'none', // Sin subrayado
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'var(--pida-accent)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'var(--pida-primary)'}
+          >
+            {props.children}
+          </span>
+        );
+      }
+      return <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>;
+    },
+    code: ({ node, inline, className, children, ...props }) => {
+      const match = /language-([\w-]+)/.exec(className || '');
+      
+      if (!inline && match && match[1] === 'mermaid') {
+        return <MermaidChart chartCode={String(children)} isTyping={isTyping} />;
+      }
+      
+      return markdownComponents.code({ node, inline, className, children, ...props });
+    }
+  }), [isTyping, handleFollowUpClick, isResearchMode]);
+
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
       return (
@@ -1104,6 +1141,14 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     const isCurrentlyTypingThis = isTyping && index === messages.length - 1;
     let displayContent = msg.content;
+
+    // CONVERSION DE ¿...? A ENLACES EN MODO CHAT NORMAL
+    if (!isResearchMode && displayContent) {
+      displayContent = displayContent.replace(/¿([^?]+)\?/g, (match, p1) => {
+        const queryText = encodeURIComponent(`¿${p1}?`);
+        return `¿${p1}?`;
+      });
+    }
 
     let statusLogContent = null;
     const logRegex = /<pida_status_log>([\s\S]*?)(?:<\/pida_status_log>|$)/i;
