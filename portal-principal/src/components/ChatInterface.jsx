@@ -626,44 +626,6 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const isLastMessageModel = lastMessage && lastMessage.role === 'model';
   const isLastMessageEmpty = !lastMessage || lastMessage.content === '';
 
-  // Interceptador dinámico de componentes Markdown para inyectar 'isTyping' a MermaidChart
-  const customMarkdownComponents = React.useMemo(() => ({
-    ...markdownComponents,
-    a: ({ node, ...props }) => {
-      if (props.href && props.href.startsWith('pida-query:')) {
-        const queryText = decodeURIComponent(props.href.substring(11));
-        return (
-          <span
-            onClick={(e) => {
-              e.preventDefault();
-              handleFollowUpClick(queryText);
-            }}
-            style={{
-              color: 'var(--pida-primary)',
-              textDecoration: 'none', // Sin subrayado
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-            onMouseOver={(e) => e.currentTarget.style.color = 'var(--pida-accent)'}
-            onMouseOut={(e) => e.currentTarget.style.color = 'var(--pida-primary)'}
-          >
-            {props.children}
-          </span>
-        );
-      }
-      return <PreviewLink href={props.href} {...props}>{props.children}</PreviewLink>;
-    },
-    code: ({ node, inline, className, children, ...props }) => {
-      const match = /language-([\w-]+)/.exec(className || '');
-      
-      if (!inline && match && match[1] === 'mermaid') {
-        return <MermaidChart chartCode={String(children)} isTyping={isTyping} />;
-      }
-      
-      return markdownComponents.code({ node, inline, className, children, ...props });
-    }
-  }), [isTyping, handleFollowUpClick]);
-
   const formatMarkdown = (text) => {
     if (!text) return "";
     
