@@ -1247,6 +1247,8 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
     displayContent = displayContent.replace(/["']br["']/g, '<br />');
 
+    const showPendingSpinner = isCurrentlyTypingThis && !displayContent.trim() && !statusLogContent;
+
     return (
       <>
         {statusLogContent && (
@@ -1256,6 +1258,14 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
             isTyping={isCurrentlyTypingThis} 
             isResearchMode={isResearchMode}
           />
+        )}
+        {showPendingSpinner && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1, pl: 0.5 }}>
+            <CircularProgress size={18} sx={{ color: 'var(--pida-primary, #101852)' }} />
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', color: 'var(--pida-text-muted, #64748b)', fontStyle: 'italic' }}>
+              PIDA está pensando...
+            </Typography>
+          </Box>
         )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={customMarkdownComponents}>
