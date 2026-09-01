@@ -313,6 +313,12 @@ export default function Dashboard({ user, onRequireSubscription }) {
                     type === 'analizador' ? PIDA_CONFIG.API_ANA + '/analysis-history' : 
                     `${API_PRE}/prequalifications`;
     await fetch(`${baseUrl}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }}); 
+    
+    setLoadData(prev => ({
+      ...prev,
+      [type === 'chat' ? 'investigador' : type === 'analizador' ? 'ana' : 'pre']: null
+    }));
+
     fetchHistories();
   };
 
@@ -452,9 +458,14 @@ export default function Dashboard({ user, onRequireSubscription }) {
                     key={item.id} 
                     sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, py: 1.5 }} 
                     onClick={() => { 
-                      if (currentView === 'investigador') setLoadData(p => ({...p, investigador: item.id})); 
-                      else if (currentView === 'analizador') setLoadData(p => ({...p, ana: item.id})); 
-                      else setLoadData(p => ({...p, pre: item.id})); 
+                      const payload = { 
+                        id: item.id, 
+                        type: item.conversation_type || (isResearchMode ? 'deep_research' : 'chat'), 
+                        timestamp: Date.now() 
+                      };
+                      if (currentView === 'investigador') setLoadData(p => ({...p, investigador: payload})); 
+                      else if (currentView === 'analizador') setLoadData(p => ({...p, ana: payload})); 
+                      else setLoadData(p => ({...p, pre: payload})); 
                       handleMenuClose(); 
                     }}
                   >

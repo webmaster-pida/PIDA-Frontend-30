@@ -205,6 +205,7 @@ export default function PrequalifierInterface({ user, resetSignal, loadPreId }) 
 
   useEffect(() => {
     if (loadPreId) {
+      const targetId = typeof loadPreId === 'object' ? loadPreId.id : loadPreId;
       const loadPastPre = async () => {
         setIsAnalyzing(true);
         setStatusMsg('Cargando historial...');
@@ -214,7 +215,7 @@ export default function PrequalifierInterface({ user, resetSignal, loadPreId }) 
         
         try {
           const token = await user.getIdToken();
-          const res = await fetch(`${API_PRE}/prequalifications/${loadPreId}`, {
+          const res = await fetch(`${API_PRE}/prequalifications/${targetId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!res.ok) throw new Error("Error del servidor al cargar el historial.");

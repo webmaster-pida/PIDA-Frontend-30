@@ -337,6 +337,7 @@ export default function AnalyzerInterface({ user, resetSignal, loadAnaId }) {
 
   useEffect(() => {
     if (loadAnaId) {
+      const targetId = typeof loadAnaId === 'object' ? loadAnaId.id : loadAnaId;
       const loadPastAna = async () => {
         setIsAnalyzing(true);
         setStatusText('Cargando historial...');
@@ -347,7 +348,7 @@ export default function AnalyzerInterface({ user, resetSignal, loadAnaId }) {
         
         try {
           const token = await user.getIdToken();
-          const res = await fetch(`${API_ANA}/analysis-history/${loadAnaId}`, {
+          const res = await fetch(`${API_ANA}/analysis-history/${targetId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!res.ok) throw new Error("Error del servidor al cargar el historial.");
@@ -371,7 +372,7 @@ export default function AnalyzerInterface({ user, resetSignal, loadAnaId }) {
             ]);
           }
           
-          setCurrentAnaId(loadAnaId);
+          setCurrentAnaId(targetId);
           setFiles([]);
           setTimeout(() => scrollToBottom('auto'), 100);
         } catch (err) {

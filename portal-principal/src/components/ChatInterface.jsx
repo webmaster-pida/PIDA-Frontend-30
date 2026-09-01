@@ -816,14 +816,21 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
 
   useEffect(() => {
     if (loadChatId) {
+      const targetId = typeof loadChatId === 'object' ? loadChatId.id : loadChatId;
+      const targetType = typeof loadChatId === 'object' ? loadChatId.type : null;
+
+      if (targetType && typeof setIsResearchMode === 'function') {
+        setIsResearchMode(targetType === 'deep_research');
+      }
+
       const loadPastChat = async () => {
         try {
           const token = await user.getIdToken();
-          const res = await fetch(`${API_CHAT}/conversations/${loadChatId}/messages`, {
+          const res = await fetch(`${API_CHAT}/conversations/${targetId}/messages`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const msgs = await res.json();
-          setChatId(loadChatId);
+          setChatId(targetId);
           setMessages(msgs);
           setIsAtBottom(true);
           setTimeout(() => scrollToBottom('auto'), 100);
