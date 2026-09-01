@@ -857,7 +857,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     return data.id;
   };
 
-  const handleSend = async (e, textOverride = null) => {
+  const handleSend = async (e, textOverride = null, forceMode = null, forceNewConversation = false) => {
     if (e) e.preventDefault();
     
     const textToSend = textOverride || input.trim();
@@ -879,7 +879,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
     setTimeout(() => scrollToBottom(), 50);
 
     try {
-      let currentChatId = chatId;
+      let currentChatId = forceNewConversation ? null : chatId;
       let isNewConversation = false;
       
       if (!currentChatId) {
@@ -902,12 +902,14 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
         }
       }
 
+        const activeMode = forceMode || (isResearchMode ? "deep_research" : "chat");
+
         const res = await fetch(`${API_CHAT}/chat-stream/${currentChatId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             prompt: textToSend,
-            mode: isResearchMode ? "deep_research" : "chat"
+            mode: activeMode
           })
         });
 
@@ -985,7 +987,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
                 const data = JSON.parse(line.substring(6));
                 
                 if (data.event === 'status' && data.message) {
-                  if (isResearchMode) {
+                  if (activeMode === 'deep_research') {
                     setResearchStatuses(prev => {
                       if (prev.includes(data.message)) return prev;
                       if (prev.length > 0) {
@@ -1102,6 +1104,43 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
   const customMarkdownComponents = React.useMemo(() => ({
     ...markdownComponents,
     a: ({ node, ...props }) => {
+      if (props.href && props.href.startsWith('pida-action:switch_deep_research')) {
+        return (
+          <Button
+            variant="outlined"
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              e.preventDefault();
+              setIsResearchMode(true);
+              setMessages([]);
+              setChatId(null);
+              setInput('');
+              setQuestionQueue([]);
+              setResearchStatuses([]);
+              setIsAtBottom(true);
+              
+              const urlParams = new URLSearchParams(props.href.split('?')[1]);
+              const queryText = urlParams.get('query');
+              if (queryText) {
+                handleSend(null, queryText, "deep_research", true);
+              }
+            }}
+            sx={{
+              mt: 1,
+              fontWeight: 700,
+              textTransform: 'none',
+              borderRadius: '8px',
+              borderColor: 'var(--pida-primary)',
+              color: 'var(--pida-primary)',
+              '&:hover': { bgcolor: 'rgba(16, 24, 82, 0.05)' }
+            }}
+          >
+            🔍 Ejecutar Investigación Profunda
+          </Button>
+        );
+      }
+
       if (!isResearchMode && props.href && props.href.startsWith('pida-query:')) {
         const queryText = decodeURIComponent(props.href.substring(11));
         return (
@@ -1134,7 +1173,7 @@ export default function ChatInterface({ user, resetSignal, loadChatId, refreshHi
       
       return markdownComponents.code({ node, inline, className, children, ...props });
     }
-  }), [isTyping, handleFollowUpClick, isResearchMode]);
+  }), [isTyping, handleFollowUpClick, isResearchMode, setIsResearchMode, handleSend]);
 
   const renderMessageContent = (msg, index) => {
     if (msg.role === 'user') {
